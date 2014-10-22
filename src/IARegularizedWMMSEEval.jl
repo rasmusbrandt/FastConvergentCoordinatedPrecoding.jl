@@ -8,7 +8,7 @@
 module IARegularizedWMMSEEval
 
 using CoordinatedPrecoding, Base.LinAlg.BLAS
-import Gurobi
+import Convex
 
 export
     # algorithms.jl

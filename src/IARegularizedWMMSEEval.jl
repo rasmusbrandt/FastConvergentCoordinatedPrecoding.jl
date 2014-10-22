@@ -8,7 +8,7 @@
 module IARegularizedWMMSEEval
 
 using CoordinatedPrecoding, Base.LinAlg.BLAS
-import Convex
+import Convex, ECOS, SCS
 
 export
     # algorithms.jl

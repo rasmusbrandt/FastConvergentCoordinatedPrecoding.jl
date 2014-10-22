@@ -14,10 +14,6 @@ function IARegularizedWMMSE(channel::SinglecarrierChannel, network::Network,
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network)
 
-    if !all(ds .== 1)
-        error("Currently, Convex.jl does not work with nuclear_norm. Therefore the optimization problems are written with 1-norm formulations, i.e. only working for d = 1. Fix this!")
-    end
-
     state = IARegularizedWMMSEState(
         Array(Matrix{Complex128}, channel.K),
         initial_MSE_weights(ds),
@@ -66,8 +62,23 @@ function check_and_defaultize_settings(::Type{IARegularizedWMMSEState},
     end
 
     # Local settings
+    if !haskey(settings, "IARegularizedWMMSE:perform_regularization")
+        settings["IARegularizedWMMSE:perform_regularization"] = true
+    end
+    if !haskey(settings, "IARegularizedWMMSE:solver")
+        if settings["IARegularizedWMMSE:perform_regularization"] == false
+            # ECOS gives sufficiently accurate results for the BCD to converge.
+            settings["IARegularizedWMMSE:solver"] = ECOS.ECOSMathProgModel()
+        else
+            # Empirically, it seems that SCS does not give sufficiently accurate
+            # results to reproduce the closed-form WMMSE solutions when the
+            # regularization is turned off. I probably need another solver, and
+            # thus I have to wait for support for this in Convex.jl.
+            settings["IARegularizedWMMSE:solver"] = SCS.SCSMathProgModel()
+        end
+    end
     if !haskey(settings, "IARegularizedWMMSE:regularization_factor")
-        settings["IARegularizedWMMSE:regularization_factor"] = 3
+        settings["IARegularizedWMMSE:regularization_factor"] = 0
     end
 
     return settings
@@ -83,42 +94,58 @@ function update_MSs!(state::IARegularizedWMMSEState,
         for k = served_MS_ids(i, cell_assignment)
             # Received covariance and interference subspace basis
             Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
-            J = Array(Complex128, channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
+            J_ext = Array(Float64, 2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
             for j = 1:channel.I
+                Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
+                H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
                 for l in served_MS_ids(j, cell_assignment)
                     #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
                     herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
 
                     if l != k
-                        J[:,(1 + j_offset):(j_offset + ds[l])] = channel.H[k,j]*state.V[l]
+                        Vr = real(state.V[l]); Vi = imag(state.V[l])
+                        V_ext = vcat(Vr, Vi)
+
+                        J_ext[:,(1 + j_offset):(j_offset + ds[l])] = H_ext*V_ext
                         j_offset += ds[l]
                     end
                 end
             end
 
             # Find receiver
-            F = channel.H[k,i]*state.V[k]; Fr = real(F); Fi = imag(F)
-            Fext = vcat(Fr, Fi)
+            F = channel.H[k,i]*state.V[k]
+            Fr = real(F); Fi = imag(F)
+            F_ext = vcat(Fr, Fi) # only retain real part in multiplication
             Phi_r = real(full(Phi)); Phi_i = imag(full(Phi))
             Phi_ext = Symmetric(hvcat((2,2), Phi_r, -Phi_i, Phi_i, Phi_r))
-            J_r = real(J); J_i = imag(J)
-            J_ext = hvcat((2,2), J_r, -J_i, J_i, J_r)
 
+            # MSE term
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
-            MSE = ds[k] - 2*trace(Fext'*Us) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
-            INN = Convex.norm(J_ext'*Us, 1)
-            problem = Convex.minimize(MSE + settings["IARegularizedWMMSE:regularization_factor"]*INN)
-            Convex.solve!(problem)
+            MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
+
+            if settings["IARegularizedWMMSE:perform_regularization"]
+                # Nuclear norm term reformulated as inspired by Convex.jl
+                A = Convex.Variable(sum(ds) - ds[k], sum(ds) - ds[k])
+                B = Convex.Variable(ds[k], ds[k])
+                IntfNN_obj = 0.5*(trace(A) + trace(B))
+                IntfNN_constr = Convex.isposdef([A J_ext'*Us;Us'*J_ext B])
+
+                problem = Convex.minimize(MSE + settings["IARegularizedWMMSE:regularization_factor"]*IntfNN_obj, IntfNN_constr)
+            else
+                # Solve standard MSE problem
+                problem = Convex.minimize(MSE)
+            end
+
+            Convex.solve!(problem, settings["IARegularizedWMMSE:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
                 state.U[k] = Ur + im*Ui
             else
-                println("Problem with Convex.jl in update_MSs!")
+                error("Problem with Convex.jl in update_MSs!")
             end
 
             # Find MSE weight
-            Ummse = Phi\F
-            state.W[k] = Hermitian((eye(ds[k]) - Ummse'*F)\eye(ds[k]))
+            state.W[k] = Hermitian((eye(ds[k]) - state.U[k]'*F - F'*state.U[k] + state.U[k]'*Phi*state.U[k])\eye(ds[k]))
         end
     end
 end
@@ -153,38 +180,48 @@ function update_BSs!(state::IARegularizedWMMSEState,
             # Desired channel
             G = channel.H[k,i]'*state.U[k]*state.W[k]
             Gr = real(G); Gi = imag(G)
-            Gext = vcat(Gr, Gi)
+            G_ext = vcat(Gr, Gi) # only retain real part in multiplication
 
             Vs[k] = Convex.Variable(2*channel.Ms[i], size(state.W[k], 1))
-            objective += Convex.sum_squares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(Gext'*Vs[k])
+            objective += Convex.sum_squares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(G_ext'*Vs[k])
             used_power += Convex.sum_squares(Vs[k])
         end
         push!(constraints, used_power <= Ps[i])
     end
 
-    # Interference subspace basis contribution
-    for i = 1:channel.I
-        for k = served_MS_ids(i, cell_assignment)
-            J = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
+    # Interference subspace basis nuclear norm regularization
+    if settings["IARegularizedWMMSE:perform_regularization"]
+        for i = 1:channel.I
+            for k = served_MS_ids(i, cell_assignment)
+                J_ext = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
 
-            for j = 1:channel.I
-                Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
-                H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
+                for j = 1:channel.I
+                    Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
+                    H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
 
-                for l in served_MS_ids_except_me(k, j, cell_assignment)
-                    constraints += (J[:, (1 + j_offset):(j_offset + ds[l])] == H_ext*Vs[j])
-                    j_offset += ds[l]
+                    for l in served_MS_ids_except_me(k, j, cell_assignment)
+                        push!(constraints, J_ext[:, (1 + j_offset):(j_offset + ds[l])] == H_ext*Vs[j])
+                        j_offset += ds[l]
+                    end
                 end
-            end
 
-            Ur = real(state.U[k]); Ui = imag(state.U[k])
-            U_ext = vcat(Ur, Ui)
-            objective += settings["IARegularizedWMMSE:regularization_factor"]*Convex.norm(U_ext'*J, 1)
+                Ur = real(state.U[k]); Ui = imag(state.U[k])
+                U_ext = vcat(Ur, Ui)
+
+                # Nuclear norm term reformulated as inspired by Convex.jl
+                A = Convex.Variable(sum(ds) - ds[k], sum(ds) - ds[k])
+                B = Convex.Variable(ds[k], ds[k])
+                IntfNN_obj = 0.5*(trace(A) + trace(B))
+                IntfNN_constr = Convex.isposdef([A J_ext'*U_ext;U_ext'*J_ext B])
+
+                objective += settings["IARegularizedWMMSE:regularization_factor"]*IntfNN_obj
+                push!(constraints, IntfNN_constr)
+            end
         end
     end
 
     problem = Convex.minimize(objective, constraints)
-    Convex.solve!(problem)
+    Convex.solve!(problem, settings["IARegularizedWMMSE:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I
             for k in served_MS_ids(i, cell_assignment)
@@ -193,7 +230,7 @@ function update_BSs!(state::IARegularizedWMMSEState,
         end
         objective = problem.optval
     else
-        println("Problem with Convex.jl in update_BSs!")
+        error("Problem with Convex.jl in update_BSs!")
         objective = 0
     end
 

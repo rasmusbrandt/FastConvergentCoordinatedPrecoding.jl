@@ -25,18 +25,6 @@ data = load(parsed_args["file_name"])
 include("src/InterferenceRankRegularizedWSR.jl")
 using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 
-if haskey(data["simulation_params"], "I")
-  I = data["simulation_params"]["I"]
-else
-  error("simulation_params does not contain I!")
-end
-if haskey(data["simulation_params"], "Kc")
-  Kc = data["simulation_params"]["Kc"]
-else
-  error("simulation_params does not contain Kc!")
-end
-K = I*Kc
-
 plot_params = [
     "name_suffix" => "",
 
@@ -47,6 +35,14 @@ plot_params = [
     ],
 
     "precoding_methods" => {
+        "LogDetHeuristic" => [
+            ("logdet_rates", [ "key" => "g-", "legend" => "LogDetHeuristic" ]),
+        ],
+
+        "NuclearNormHeuristic" => [
+            ("logdet_rates", [ "key" => "y-", "legend" => "NuclearNormHeuristic" ]),
+        ],
+
         "Shi2011_WMMSE" => [
             ("logdet_rates", [ "key" => "b-", "legend" => "WMMSE" ]),
         ],
@@ -55,15 +51,11 @@ plot_params = [
             ("logdet_rates", [ "key" => "r-", "legend" => "MaxSINR" ]),
         ],
 
-        "LogDetHeuristic" => [
-            ("logdet_rates", [ "key" => "g-", "legend" => "IARegularized-WMMSE" ]),
-        ],
-
-        # "Eigenprecoding" => {
-        #     ("intercell_tdma_rates", [ "key" => "c-", "legend" => "TDMA" ]),
-        #     ("intracell_tdma_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
-        #     ("uncoord_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]),
-        # },
+        "Eigenprecoding" => {
+            ("intercell_tdma_logdet_rates", [ "key" => "c-", "legend" => "TDMA" ]),
+            ("intracell_tdma_logdet_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
+            ("uncoord_logdet_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]),
+        },
     },
 ]
 

@@ -36,22 +36,26 @@ plot_params = [
     ],
 
     "precoding_methods" => {
-        "LogDetHeuristic" => {
-            ("MMSE_rates", [ "key" => "g-", "legend" => "LogDetHeuristic bound" ]),
-        },
-        
-        "Shi2011_WMMSE" => {
-            ("MMSE_rates", [ "key" => "b-", "legend" => "Shi2011_WMMSE bound" ]),
-        },
+        "LogDetHeuristic" => [
+            ("logdet_rates", [ "key" => "g-", "legend" => "LogDetHeuristic" ]),
+        ],
 
-        "Gomadam2008_MaxSINR" => {
-            ("MMSE_rates", [ "key" => "r-", "legend" => "Gomadam2008_MaxSINR bound" ]),
-        },
+        "NuclearNormHeuristic" => [
+            ("logdet_rates", [ "key" => "y-", "legend" => "NuclearNormHeuristic" ]),
+        ],
+
+        "Shi2011_WMMSE" => [
+            ("logdet_rates", [ "key" => "b-", "legend" => "WMMSE" ]),
+        ],
+
+        "Gomadam2008_MaxSINR" => [
+            ("logdet_rates", [ "key" => "r-", "legend" => "MaxSINR" ]),
+        ],
 
         "Eigenprecoding" => {
-            ("intercell_tdma_MMSE_rates", [ "key" => "c-", "legend" => "TDMA bound" ]),
-            ("intracell_tdma_MMSE_rates", [ "key" => "c-.", "legend" => "Intracell TDMA bound" ]),
-            ("uncoord_MMSE_rates", [ "key" => "k-", "legend" => "Uncoordinated bound" ]),
+            ("intercell_tdma_logdet_rates", [ "key" => "c-", "legend" => "TDMA" ]),
+            ("intracell_tdma_logdet_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
+            ("uncoord_logdet_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]),
         },
     },
 ]

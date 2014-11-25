@@ -17,7 +17,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 
 precoding_settings = [
     "stop_crit" => 0,
-    "max_iters" => 100,
+    "max_iters" => 20,
     "a" => "b",
 ]
 

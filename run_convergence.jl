@@ -6,8 +6,8 @@
 # Convergence as a function of number of iterations.
 ##########################################################################
 
-include("src/IntRankRegularizedWMMSE.jl")
-using IntRankRegularizedWMMSE, CoordinatedPrecoding
+include("src/IntRankRegularizedWSR.jl")
+using IntRankRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################
@@ -51,35 +51,35 @@ save("convergence_$(simulation_params["name"]).jld",
      "precoding_settings", precoding_settings,
      "results", results)
 
-# ##########################################################################
-# # Interfering broadcast channel
-# simulation_params = [
-#     "name" => "$(start_time)-ibc",
-#     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
-#     "P_dBm" => 20.,
-#     "d" => 1,
-#     "Ndrops" => 1, "Nsim" => 1,
-#     "precoding_methods" => [
-#         Shi2011_WMMSE,
-#         Gomadam2008_MaxSINR,
-#         IARegularizedWMMSE,
-#         Eigenprecoding
-#     ]
-# ]
-# precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_params["Kc"])
-# network =
-#     setup_interfering_broadcast_channel(simulation_params["I"],
-#         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
-#         transmit_power=10^(simulation_params["P_dBm"]/10),
-#         no_streams=simulation_params["d"])
+##########################################################################
+# Interfering broadcast channel
+simulation_params = [
+    "name" => "$(start_time)-ibc",
+    "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
+    "P_dBm" => 20.,
+    "d" => 1,
+    "Ndrops" => 1, "Nsim" => 1,
+    "precoding_methods" => [
+        Shi2011_WMMSE,
+        Gomadam2008_MaxSINR,
+        IARegularizedWMMSE,
+        Eigenprecoding
+    ]
+]
+precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_params["Kc"])
+network =
+    setup_interfering_broadcast_channel(simulation_params["I"],
+        simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
+        transmit_power=10^(simulation_params["P_dBm"]/10),
+        no_streams=simulation_params["d"])
 
-# results = simulate_convergence(network, simulation_params, precoding_settings)
+results = simulate_convergence(network, simulation_params, precoding_settings)
 
-# println("-- Saving $(simulation_params["name"]) results")
-# save("convergence_$(simulation_params["name"]).jld",
-#      "simulation_params", clean_simulation_params_for_jld(simulation_params),
-#      "precoding_settings", precoding_settings,
-#      "results", results)
+println("-- Saving $(simulation_params["name"]) results")
+save("convergence_$(simulation_params["name"]).jld",
+     "simulation_params", clean_simulation_params_for_jld(simulation_params),
+     "precoding_settings", precoding_settings,
+     "results", results)
 
 ##########################################################################
 # Triangular3Site network

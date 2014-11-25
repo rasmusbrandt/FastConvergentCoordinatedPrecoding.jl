@@ -6,8 +6,8 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/IARegularizedWMMSE.jl")
-using IARegularizedWMMSE, CoordinatedPrecoding
+include("src/IARegularizedWSR.jl")
+using IARegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # General settings
@@ -24,7 +24,7 @@ simulation_params = {
     "precoding_methods" => [
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
-        IARegularizedWMMSE,
+        IARegularizedWSR,
         Eigenprecoding
     ]
 }

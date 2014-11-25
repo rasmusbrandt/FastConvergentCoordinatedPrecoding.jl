@@ -1,23 +1,4 @@
 ##########################################################################
-# IntRankRegularizedWMMSE
-#
-# Evaluation environment for the IntRankRegularizedWMMSE project
-# https://gitr.sys.kth.se/rabr5411/IntRankRegularizedWMMSE.jl
-##########################################################################
-
-module IntRankRegularizedWMMSE
-
-using CoordinatedPrecoding
-import Lumberjack
-
-export
-    # precoding
-    LogDetHeuristic, NuclearNormHeuristic
-
-include("precoding/LogDetHeuristic.jl")
-include("precoding/NuclearNormHeuristic.jl")
-
-##########################################################################
 # Global settings and consistency checks
 function check_and_defaultize_settings!(settings::Dict{ASCIIString, Any})
     if !haskey(settings, "user_priorities")
@@ -38,6 +19,4 @@ function check_and_defaultize_settings!(settings::Dict{ASCIIString, Any})
     if settings["output_protocol"] != 1 && settings["output_protocol"] != 2
         error("Unknown output protocol")
     end
-end
-
 end

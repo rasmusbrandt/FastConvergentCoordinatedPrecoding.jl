@@ -22,8 +22,8 @@ data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
-include("src/IntRankRegularizedWMMSE.jl")
-using IntRankRegularizedWMMSE, CoordinatedPrecoding
+include("src/IntRankRegularizedWSR.jl")
+using IntRankRegularizedWSR, CoordinatedPrecoding
 
 plot_params = [
     "name_suffix" => "",

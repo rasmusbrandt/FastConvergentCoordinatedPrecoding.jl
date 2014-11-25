@@ -17,8 +17,10 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 
 precoding_settings = [
     "stop_crit" => 0,
-    "max_iters" => 10,
-    "a" => "b",
+    "max_iters" => 20,
+
+    "rho" => 1.,
+    "delta" => 1e-2,
 ]
 
 ##########################################################################
@@ -31,7 +33,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
@@ -62,7 +64,7 @@ save("SNR_$(simulation_params["name"]).jld",
 #     "Ndrops" => 10, "Nsim" => 1,
 #     "precoding_methods" => [
 #         LogDetHeuristic,
-#         NuclearNormHeuristic,
+#         # NuclearNormHeuristic,
 
 #         Shi2011_WMMSE,
 #         Gomadam2008_MaxSINR,
@@ -93,7 +95,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,

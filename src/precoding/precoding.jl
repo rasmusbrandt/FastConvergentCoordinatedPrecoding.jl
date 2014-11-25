@@ -19,6 +19,13 @@ function check_and_defaultize_settings!(settings::Dict{ASCIIString, Any})
     if settings["output_protocol"] != 1 && settings["output_protocol"] != 2
         error("Unknown output protocol")
     end
+
+    if !haskey(settings, "rho")
+        settings["rho"] = 1.
+    end
+    if !haskey(settings, "delta")
+        settings["delta"] = 1e-2
+    end
 end
 
 ##########################################################################

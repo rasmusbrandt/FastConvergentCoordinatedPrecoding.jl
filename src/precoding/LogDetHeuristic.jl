@@ -29,7 +29,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
 
     iters = 0; conv_crit = Inf
     while iters < settings["max_iters"]
-        update_MSs!(state, channel, sigma2s, cell_assignment)
+        update_MSs!(state, channel, sigma2s, cell_assignment, settings)
         iters += 1
 
         # Results after this iteration
@@ -97,10 +97,7 @@ function check_and_defaultize_settings!(settings, ::Type{LogDetHeuristicState})
 end
 
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
-    sigma2s::Vector{Float64}, cell_assignment::CellAssignment)
-
-    rho = 1.
-    delta = 1e-2
+    sigma2s::Vector{Float64}, cell_assignment::CellAssignment, settings)
 
     ds = [ size(state.W[k], 1) for k = 1:channel.K ]; dtot = sum(ds)
 
@@ -129,7 +126,7 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
             # Receive filter
             JJh = J*J'
-            state.U[k] = rho*reshape((kron(transpose(full(state.Y[k])), JJh) + rho*kron(transpose(full(state.Z[k])), full(Phi)))\vec(channel.H[k,i]*state.V[k]*state.Z[k]), channel.Ns[k], ds[k])
+            state.U[k] = reshape((settings["rho"]*kron(transpose(full(state.Y[k])), JJh) + kron(transpose(full(state.Z[k])), full(Phi)))\vec(channel.H[k,i]*state.V[k]*state.Z[k]), channel.Ns[k], ds[k])
 
             # MSE
             E = eye(ds[k]) - state.U[k]'*eff_chan - eff_chan'*state.U[k] + state.U[k]'*Phi*state.U[k]
@@ -137,7 +134,7 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
             # Received interference
             F = state.U[k]'*JJh*state.U[k]
-            state.Y[k] = Hermitian(inv(F + delta*eye(F)))
+            state.Y[k] = Hermitian(inv(F + settings["delta"]*eye(F)))
         end
     end
 end
@@ -145,18 +142,16 @@ end
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 
     Ps::Vector{Float64}, cell_assignment::CellAssignment, settings)
 
-    rho = 1.
-
     for i = 1:channel.I
         # Virtual uplink covariance
         Gamma = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
         for j = 1:channel.I
             for l in served_MS_ids(j, cell_assignment)
-                Gamma += rho*Hermitian(channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
+                Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
 
                 # Only works in IC....
                 if l != i
-                    Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
+                    Gamma += settings["rho"]*Hermitian(channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
                 end
             end
         end
@@ -167,7 +162,7 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
         # Precoders (reuse EVD)
         for k in served_MS_ids(i, cell_assignment)
-            state.V[k] = rho*Gamma_eigen.vectors*Diagonal(1./(Gamma_eigen.values .+ mu_star))*Gamma_eigen.vectors'*channel.H[k,i]'*state.U[k]*state.Z[k]
+            state.V[k] = Gamma_eigen.vectors*Diagonal(1./(Gamma_eigen.values .+ mu_star))*Gamma_eigen.vectors'*channel.H[k,i]'*state.U[k]*state.Z[k]
         end
     end
 end
@@ -176,13 +171,11 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     state::LogDetHeuristicState, channel::SinglecarrierChannel,
     Ps::Vector{Float64}, cell_assignment::CellAssignment, settings)
 
-    rho = 1.
-
     # Build bisector function
     bis_M = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
     for k in served_MS_ids(i, cell_assignment)
         #bis_M += Hermitian(channel.H[k,i]'*(state.U[k]*(state.Z[k]*state.Z[k])*state.U[k]')*channel.H[k,i])
-        Base.LinAlg.BLAS.herk!(bis_M.uplo, 'N', complex(1.), rho*channel.H[k,i]'*state.U[k]*state.Z[k], complex(1.), bis_M.S)
+        Base.LinAlg.BLAS.herk!(bis_M.uplo, 'N', complex(1.), channel.H[k,i]'*state.U[k]*state.Z[k], complex(1.), bis_M.S)
     end
     Gamma_eigen = eigfact(Gamma)
     bis_JMJ_diag = real(diag(Gamma_eigen.vectors'*bis_M*Gamma_eigen.vectors))

@@ -93,9 +93,6 @@ function check_and_defaultize_settings!(settings, ::Type{NuclearNormHeuristicSta
             settings["NuclearNormHeuristic:solver"] = SCS.SCSMathProgModel()
         end
     end
-    if !haskey(settings, "NuclearNormHeuristic:regularization_factor")
-        settings["NuclearNormHeuristic:regularization_factor"] = 0
-    end
 end
 
 function update_MSs!(state::NuclearNormHeuristicState,
@@ -140,7 +137,7 @@ function update_MSs!(state::NuclearNormHeuristicState,
             if settings["NuclearNormHeuristic:perform_regularization"]
                 IntfNN_obj = Convex.nuclear_norm(Us'*J_ext)
 
-                problem = Convex.minimize(MSE + settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj)
+                problem = Convex.minimize(MSE + settings["rho"]*IntfNN_obj)
             else
                 # Solve standard MSE problem
                 problem = Convex.minimize(MSE)
@@ -220,7 +217,7 @@ function update_BSs!(state::NuclearNormHeuristicState,
 
                 IntfNN_obj = Convex.nuclear_norm(U_ext'*J_ext)
 
-                objective += settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj
+                objective += settings["rho"]*IntfNN_obj
             end
         end
     end

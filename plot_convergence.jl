@@ -22,8 +22,8 @@ data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
-include("src/IARegularizedWMMSEEval.jl")
-using IARegularizedWMMSEEval, CoordinatedPrecoding
+include("src/IntRankRegularizedWMMSE.jl")
+using IntRankRegularizedWMMSE, CoordinatedPrecoding
 
 if haskey(data["simulation_params"], "I")
   I = data["simulation_params"]["I"]
@@ -38,27 +38,33 @@ end
 K = I*Kc
 
 plot_params = [
-    "precoding_methods" =>
-        [
-          "Shi2011_WMMSE" => [
-            ("rates", [ "key" => "b-", "legend" => "WMMSE" ]), ],
+    "name_suffix" => "",
 
-          "Gomadam2008_MaxSINR" => [
-            ("rates", [ "key" => "r-", "legend" => "MaxSINR" ]), ],
+    "figsize" => (8,4),
 
-          "IARegularizedWMMSE" => [
-            ("rates", [ "key" => "g-", "legend" => "IARegularized-WMMSE" ]), ],
-
-          "Eigenprecoding" => {
-            ("intercell_tdma_rates", [ "key" => "c-", "legend" => "TDMA" ]),
-            ("intracell_tdma_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
-            ("uncoord_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]), },
-        ],
-    "systemlevel_objectives" => [
+    "objectives" => [
         "sumrate" => (r -> sum(r, 3:4), [ "xlabel" => "Iterations", "ylabel" => "Sum rate [bits/s/Hz]" ]),
     ],
-    "figsize" => (8,4),
-    #"confidence_interval_z_alpha_half" => 1.96,
+
+    "precoding_methods" => {
+        "Shi2011_WMMSE" => [
+            ("logdet_rates", [ "key" => "b-", "legend" => "WMMSE" ]),
+        ],
+
+        "Gomadam2008_MaxSINR" => [
+            ("logdet_rates", [ "key" => "r-", "legend" => "MaxSINR" ]),
+        ],
+
+        "LogDetHeuristic" => [
+            ("logdet_rates", [ "key" => "g-", "legend" => "IARegularized-WMMSE" ]),
+        ],
+
+        # "Eigenprecoding" => {
+        #     ("intercell_tdma_rates", [ "key" => "c-", "legend" => "TDMA" ]),
+        #     ("intracell_tdma_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
+        #     ("uncoord_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]),
+        # },
+    },
 ]
 
 ##########################################################################
@@ -66,5 +72,4 @@ plot_params = [
 plot_convergence(
     data["results"],
     data["simulation_params"],
-    data["precoding_settings"],
     plot_params)

@@ -6,8 +6,8 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/IARegularizedWMMSEEval.jl")
-using IARegularizedWMMSEEval, CoordinatedPrecoding
+include("src/IARegularizedWMMSE.jl")
+using IARegularizedWMMSE, CoordinatedPrecoding
 
 ##########################################################################
 # General settings

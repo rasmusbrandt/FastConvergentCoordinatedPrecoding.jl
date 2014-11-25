@@ -1,20 +1,20 @@
-immutable IARegularizedWMMSEState
+immutable NuclearNormHeuristicState
     U::Array{Matrix{Complex128},1} # receive filters
     W::Array{Hermitian{Complex128},1} # MSE weights
     V::Array{Matrix{Complex128},1} # precoders
 end
 
-function IARegularizedWMMSE(channel::SinglecarrierChannel, network::Network,
+function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
     cell_assignment::CellAssignment, settings=Dict())
 
-    settings = check_and_defaultize_settings(IARegularizedWMMSEState,
+    settings = check_and_defaultize_settings(NuclearNormHeuristicState,
                                              settings, channel, network)
 
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network)
 
-    state = IARegularizedWMMSEState(
+    state = NuclearNormHeuristicState(
         Array(Matrix{Complex128}, channel.K),
         initial_MSE_weights(ds),
         initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, settings))
@@ -39,7 +39,7 @@ function IARegularizedWMMSE(channel::SinglecarrierChannel, network::Network,
     end
 end
 
-function check_and_defaultize_settings(::Type{IARegularizedWMMSEState},
+function check_and_defaultize_settings(::Type{NuclearNormHeuristicState},
     settings, channel::SinglecarrierChannel, network::Network)
 
     settings = copy(settings)
@@ -62,29 +62,29 @@ function check_and_defaultize_settings(::Type{IARegularizedWMMSEState},
     end
 
     # Local settings
-    if !haskey(settings, "IARegularizedWMMSE:perform_regularization")
-        settings["IARegularizedWMMSE:perform_regularization"] = true
+    if !haskey(settings, "NuclearNormHeuristic:perform_regularization")
+        settings["NuclearNormHeuristic:perform_regularization"] = true
     end
-    if !haskey(settings, "IARegularizedWMMSE:solver")
-        if settings["IARegularizedWMMSE:perform_regularization"] == false
+    if !haskey(settings, "NuclearNormHeuristic:solver")
+        if settings["NuclearNormHeuristic:perform_regularization"] == false
             # ECOS gives sufficiently accurate results for the BCD to converge.
-            settings["IARegularizedWMMSE:solver"] = ECOS.ECOSMathProgModel()
+            settings["NuclearNormHeuristic:solver"] = ECOS.ECOSMathProgModel()
         else
             # Empirically, it seems that SCS does not give sufficiently accurate
             # results to reproduce the closed-form WMMSE solutions when the
             # regularization is turned off. I probably need another solver, and
             # thus I have to wait for support for this in Convex.jl.
-            settings["IARegularizedWMMSE:solver"] = SCS.SCSMathProgModel()
+            settings["NuclearNormHeuristic:solver"] = SCS.SCSMathProgModel()
         end
     end
-    if !haskey(settings, "IARegularizedWMMSE:regularization_factor")
-        settings["IARegularizedWMMSE:regularization_factor"] = 0
+    if !haskey(settings, "NuclearNormHeuristic:regularization_factor")
+        settings["NuclearNormHeuristic:regularization_factor"] = 0
     end
 
     return settings
 end
 
-function update_MSs!(state::IARegularizedWMMSEState,
+function update_MSs!(state::NuclearNormHeuristicState,
     channel::SinglecarrierChannel, sigma2s::Vector{Float64},
     cell_assignment::CellAssignment, settings)
 
@@ -123,20 +123,20 @@ function update_MSs!(state::IARegularizedWMMSEState,
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
             MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
 
-            if settings["IARegularizedWMMSE:perform_regularization"]
+            if settings["NuclearNormHeuristic:perform_regularization"]
                 # Nuclear norm term reformulated as inspired by Convex.jl
                 A = Convex.Variable(sum(ds) - ds[k], sum(ds) - ds[k])
                 B = Convex.Variable(ds[k], ds[k])
                 IntfNN_obj = 0.5*(trace(A) + trace(B))
                 IntfNN_constr = Convex.isposdef([A J_ext'*Us;Us'*J_ext B])
 
-                problem = Convex.minimize(MSE + settings["IARegularizedWMMSE:regularization_factor"]*IntfNN_obj, IntfNN_constr)
+                problem = Convex.minimize(MSE + settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj, IntfNN_constr)
             else
                 # Solve standard MSE problem
                 problem = Convex.minimize(MSE)
             end
 
-            Convex.solve!(problem, settings["IARegularizedWMMSE:solver"])
+            Convex.solve!(problem, settings["NuclearNormHeuristic:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
                 state.U[k] = Ur + im*Ui
@@ -150,7 +150,7 @@ function update_MSs!(state::IARegularizedWMMSEState,
     end
 end
 
-function update_BSs!(state::IARegularizedWMMSEState,
+function update_BSs!(state::NuclearNormHeuristicState,
     channel::SinglecarrierChannel, Ps::Vector{Float64},
     cell_assignment::CellAssignment, settings)
 
@@ -190,7 +190,7 @@ function update_BSs!(state::IARegularizedWMMSEState,
     end
 
     # Interference subspace basis nuclear norm regularization
-    if settings["IARegularizedWMMSE:perform_regularization"]
+    if settings["NuclearNormHeuristic:perform_regularization"]
         for i = 1:channel.I
             for k = served_MS_ids(i, cell_assignment)
                 J_ext = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
@@ -214,14 +214,14 @@ function update_BSs!(state::IARegularizedWMMSEState,
                 IntfNN_obj = 0.5*(trace(A) + trace(B))
                 IntfNN_constr = Convex.isposdef([A J_ext'*U_ext;U_ext'*J_ext B])
 
-                objective += settings["IARegularizedWMMSE:regularization_factor"]*IntfNN_obj
+                objective += settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj
                 push!(constraints, IntfNN_constr)
             end
         end
     end
 
     problem = Convex.minimize(objective, constraints)
-    Convex.solve!(problem, settings["IARegularizedWMMSE:solver"])
+    Convex.solve!(problem, settings["NuclearNormHeuristic:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I
             for k in served_MS_ids(i, cell_assignment)
@@ -237,7 +237,7 @@ function update_BSs!(state::IARegularizedWMMSEState,
     return objective
 end
 
-function calculate_rates(state::IARegularizedWMMSEState)
+function calculate_rates(state::NuclearNormHeuristicState)
     K = length(state.W)
     ds = Int[ size(state.W[k], 1) for k = 1:K ]; max_d = maximum(ds)
 

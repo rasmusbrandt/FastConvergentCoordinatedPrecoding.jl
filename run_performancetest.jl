@@ -6,8 +6,8 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/IARegularizedWSR.jl")
-using IARegularizedWSR, CoordinatedPrecoding
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # General settings
@@ -22,9 +22,9 @@ simulation_params = {
     "d" => 1,
     "Ntest" => 100,
     "precoding_methods" => [
+        LogDetHeuristic,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
-        IARegularizedWSR,
         Eigenprecoding
     ]
 }

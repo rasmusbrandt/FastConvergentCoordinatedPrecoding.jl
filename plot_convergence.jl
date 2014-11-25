@@ -22,8 +22,8 @@ data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
-include("src/IntRankRegularizedWSR.jl")
-using IntRankRegularizedWSR, CoordinatedPrecoding
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 
 if haskey(data["simulation_params"], "I")
   I = data["simulation_params"]["I"]

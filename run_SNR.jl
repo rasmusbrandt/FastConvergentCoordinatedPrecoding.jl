@@ -6,8 +6,8 @@
 # Performance as a function of transmit power.
 ##########################################################################
 
-include("src/IntRankRegularizedWSR.jl")
-using IntRankRegularizedWSR, CoordinatedPrecoding
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

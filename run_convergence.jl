@@ -6,8 +6,8 @@
 # Convergence as a function of number of iterations.
 ##########################################################################
 
-include("src/IntRankRegularizedWSR.jl")
-using IntRankRegularizedWSR, CoordinatedPrecoding
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

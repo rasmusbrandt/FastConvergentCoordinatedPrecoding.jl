@@ -138,13 +138,9 @@ function update_MSs!(state::NuclearNormHeuristicState,
             MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
 
             if settings["NuclearNormHeuristic:perform_regularization"]
-                # Nuclear norm term reformulated as inspired by Convex.jl
-                A = Convex.Variable(sum(ds) - ds[k], sum(ds) - ds[k])
-                B = Convex.Variable(ds[k], ds[k])
-                IntfNN_obj = 0.5*(trace(A) + trace(B))
-                IntfNN_constr = Convex.isposdef([A J_ext'*Us;Us'*J_ext B])
+                IntfNN_obj = Convex.nuclear_norm(Us'*J_ext)
 
-                problem = Convex.minimize(MSE + settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj, IntfNN_constr)
+                problem = Convex.minimize(MSE + settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj)
             else
                 # Solve standard MSE problem
                 problem = Convex.minimize(MSE)
@@ -222,14 +218,9 @@ function update_BSs!(state::NuclearNormHeuristicState,
                 Ur = real(state.U[k]); Ui = imag(state.U[k])
                 U_ext = vcat(Ur, Ui)
 
-                # Nuclear norm term reformulated as inspired by Convex.jl
-                A = Convex.Variable(sum(ds) - ds[k], sum(ds) - ds[k])
-                B = Convex.Variable(ds[k], ds[k])
-                IntfNN_obj = 0.5*(trace(A) + trace(B))
-                IntfNN_constr = Convex.isposdef([A J_ext'*U_ext;U_ext'*J_ext B])
+                IntfNN_obj = Convex.nuclear_norm(U_ext'*J_ext)
 
                 objective += settings["NuclearNormHeuristic:regularization_factor"]*IntfNN_obj
-                push!(constraints, IntfNN_constr)
             end
         end
     end
@@ -244,7 +235,7 @@ function update_BSs!(state::NuclearNormHeuristicState,
         end
         objective = problem.optval
     else
-        error("Problem with Convex.jl in update_BSs!")
+        warn("Problem with Convex.jl in update_BSs!")
         objective = 0
     end
 

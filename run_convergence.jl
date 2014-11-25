@@ -28,11 +28,13 @@ simulation_params = [
     "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
     "P_dBm" => 30.,
     "d" => 2,
-    "Ndrops" => 100, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
+        LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
-        LogDetHeuristic,
         Eigenprecoding
     ]
 ]
@@ -58,11 +60,13 @@ simulation_params = [
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 20.,
     "d" => 1,
-    "Ndrops" => 1, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
+        LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
-        IARegularizedWMMSE,
         Eigenprecoding
     ]
 ]
@@ -88,11 +92,13 @@ simulation_params = [
     "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
     "P_dBm" => 18.2,
     "d" => 2,
-    "Ndrops" => 1, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
+        LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
-        LogDetHeuristic,
         Eigenprecoding
     ]
 ]

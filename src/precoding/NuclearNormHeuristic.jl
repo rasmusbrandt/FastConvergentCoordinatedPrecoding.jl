@@ -1,65 +1,81 @@
 immutable NuclearNormHeuristicState
-    U::Array{Matrix{Complex128},1} # receive filters
-    W::Array{Hermitian{Complex128},1} # MSE weights
-    V::Array{Matrix{Complex128},1} # precoders
+    U::Array{Matrix{Complex128},1}
+    W::Array{Hermitian{Complex128},1}
+    V::Array{Matrix{Complex128},1}
 end
 
 function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
     cell_assignment::CellAssignment, settings=Dict())
 
-    settings = check_and_defaultize_settings(NuclearNormHeuristicState,
-                                             settings, channel, network)
+    check_and_defaultize_settings!(settings, NuclearNormHeuristicState)
 
+    K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network)
 
     state = NuclearNormHeuristicState(
-        Array(Matrix{Complex128}, channel.K),
-        initial_MSE_weights(ds),
+        Array(Matrix{Complex128}, K),
+        unity_MSE_weights(ds),
         initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, settings))
-    rates = Array(Float64, channel.K, maximum(ds), settings["stop_crit"])
-    objective = Array(Float64, channel.K, maximum(ds), settings["stop_crit"])
+    objective = Float64[]
+    logdet_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
+    MMSE_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
+    allocated_power = Array(Float64, K, maximum(ds), settings["max_iters"])
 
-    objective[:,:,1] = 0
-    for iter = 1:(settings["stop_crit"]-1)
+    iters = 0; conv_crit = Inf
+    while iters < settings["max_iters"]
         update_MSs!(state, channel, sigma2s, cell_assignment, settings)
-        rates[:,:,iter] = calculate_rates(state)
-        objective[:,:,iter+1] = update_BSs!(state, channel, Ps, cell_assignment, settings)
-    end
-    update_MSs!(state, channel, sigma2s, cell_assignment, settings)
-    rates[:,:,end] = calculate_rates(state)
+        iters += 1
 
-    if settings["output_protocol"] == 1
-        return [ "rates" => rates,
-                 "objective" => objective ]
-    elseif settings["output_protocol"] == 2
-        return [ "rates" => rates[:,:,end],
-                 "objective" => objective[:,:,end] ]
+        # Results after this iteration
+        logdet_rates[:,:,iters], t = calculate_logdet_rates(state, settings)
+        push!(objective, t)
+        MMSE_rates[:,:,iters], _ = calculate_MMSE_rates(state, settings)
+        allocated_power[:,:,iters] = calculate_allocated_power(state)
+
+        # Check convergence
+        if iters >= 2
+            conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
+            if conv_crit < settings["stop_crit"]
+                Lumberjack.debug("LogDetHeuristic converged.",
+                    { :no_iters => iters, :final_objective => objective[end],
+                      :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
+                      :max_iters => settings["max_iters"] })
+                break
+            end
+        end
+
+        # Begin next iteration, unless the loop will end
+        if iters < settings["max_iters"]
+            update_BSs!(state, channel, Ps, cell_assignment, settings)
+        end
     end
+    if iters == settings["max_iters"]
+        Lumberjack.debug("LogDetHeuristic did NOT converge.",
+            { :no_iters => iters, :final_objective => objective[end],
+              :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
+              :max_iters => settings["max_iters"] })
+    end
+
+    results = Dict{ASCIIString, Any}()
+    if settings["output_protocol"] == 1
+        results["objective"] = objective
+        results["logdet_rates"] = logdet_rates
+        results["MMSE_rates"] = MMSE_rates
+        results["allocated_power"] = allocated_power
+    elseif settings["output_protocol"] == 2
+        results["objective"] = objective[iters]
+        results["logdet_rates"] = logdet_rates[:,:,iters]
+        results["MMSE_rates"] = MMSE_rates[:,:,iters]
+        results["allocated_power"] = allocated_power[:,:,iters]
+    end
+    return results
 end
 
-function check_and_defaultize_settings(::Type{NuclearNormHeuristicState},
-    settings, channel::SinglecarrierChannel, network::Network)
-
-    settings = copy(settings)
-
-    # Global settings and consistency checks
-    if !haskey(settings, "user_priorities")
-        settings["user_priorities"] = ones(channel.K)
-    end
-    if !haskey(settings, "output_protocol")
-        settings["output_protocol"] = 1
-    end
-    if !haskey(settings, "stop_crit")
-        settings["stop_crit"] = 20
-    end
-    if !haskey(settings, "initial_precoders")
-        settings["initial_precoders"] = "dft"
-    end
-    if settings["output_protocol"] != 1 && settings["output_protocol"] != 2
-        error("Unknown output protocol")
-    end
+function check_and_defaultize_settings!(settings, ::Type{NuclearNormHeuristicState})
+    # Global settings
+    check_and_defaultize_settings!(settings)
 
     # Local settings
     if !haskey(settings, "NuclearNormHeuristic:perform_regularization")
@@ -80,8 +96,6 @@ function check_and_defaultize_settings(::Type{NuclearNormHeuristicState},
     if !haskey(settings, "NuclearNormHeuristic:regularization_factor")
         settings["NuclearNormHeuristic:regularization_factor"] = 0
     end
-
-    return settings
 end
 
 function update_MSs!(state::NuclearNormHeuristicState,
@@ -100,7 +114,7 @@ function update_MSs!(state::NuclearNormHeuristicState,
                 H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
                 for l in served_MS_ids(j, cell_assignment)
                     #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
-                    herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+                    Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
 
                     if l != k
                         Vr = real(state.V[l]); Vi = imag(state.V[l])
@@ -235,27 +249,4 @@ function update_BSs!(state::NuclearNormHeuristicState,
     end
 
     return objective
-end
-
-function calculate_rates(state::NuclearNormHeuristicState)
-    K = length(state.W)
-    ds = Int[ size(state.W[k], 1) for k = 1:K ]; max_d = maximum(ds)
-
-    rates = Array(Float64, K, max_d)
-
-    for k = 1:K
-        # W is p.d., so we should only get real eigenvalues. Numerically we may
-        # get some imaginary noise however. Also, numerically the eigenvalues
-        # may be less that 1, so we need to handle that to not get negative
-        # rates.
-        r = log2(max(1, real(eigvals(state.W[k]))))
-
-        if ds[k] < max_d
-            rates[k,:] = cat(1, r, zeros(Float64, max_d - ds[k]))
-        else
-            rates[k,:] = r
-        end
-    end
-
-    return rates
 end

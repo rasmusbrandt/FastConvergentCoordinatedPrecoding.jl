@@ -8,7 +8,7 @@
 module InterferenceRankRegularizedWSR
 
 using CoordinatedPrecoding
-import Lumberjack
+import Lumberjack, Convex, ECOS, SCS
 
 export
     # precoding
@@ -16,8 +16,8 @@ export
 
 include("precoding/LogDetHeuristic.jl")
 include("precoding/NuclearNormHeuristic.jl")
+include("precoding/precoding.jl")
 
 include("logging.jl")
-include("utils.jl")
 
 end

@@ -23,6 +23,8 @@ simulation_params = {
     "Ntest" => 100,
     "precoding_methods" => [
         LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding

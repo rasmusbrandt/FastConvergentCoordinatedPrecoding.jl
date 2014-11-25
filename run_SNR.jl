@@ -17,7 +17,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 
 precoding_settings = [
     "stop_crit" => 0,
-    "max_iters" => 200,
+    "max_iters" => 10,
     "a" => "b",
 ]
 
@@ -25,12 +25,14 @@ precoding_settings = [
 # Interference channel
 simulation_params = [
     "name" => "$(start_time)-ic",
-    "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
+    "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
     "Ps_dBm" => 0:3:40,
-    "d" => 1,
-    "Ndrops" => 50, "Nsim" => 2,
+    "d" => 2,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -57,9 +59,11 @@ simulation_params = [
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "Ps_dBm" => 0:3:40,
     "d" => 1,
-    "Ndrops" => 50, "Nsim" => 2,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -86,9 +90,11 @@ simulation_params = [
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 18.2,
     "d" => 1,
-    "Ndrops" => 50, "Nsim" => 2,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
+        NuclearNormHeuristic,
+
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding

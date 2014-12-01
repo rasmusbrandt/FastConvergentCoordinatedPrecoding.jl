@@ -1,8 +1,8 @@
 immutable LogDetHeuristicState
     U::Array{Matrix{Complex128},1}
     W::Array{Hermitian{Complex128},1} # inverse of MMSE matrix
-    Y::Array{Hermitian{Complex128},1} # inverse of received interference covariance
-    Z::Array{Hermitian{Complex128},1} # inverse of MSE matrix
+    Y::Array{Hermitian{Complex128},1} # inverse of MSE matrix
+    Z::Array{Hermitian{Complex128},1} # inverse of leakage matrix
     V::Array{Matrix{Complex128},1}
 end
 
@@ -103,38 +103,30 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
     for i = 1:channel.I
         for k in served_MS_ids(i, cell_assignment)
-            # Received covariance
+            # Received signal covariance
             Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
-            J = Array(Complex128, channel.Ns[k], dtot - ds[k]); J_offset = 0
-            for j = 1:channel.I
-                for l in served_MS_ids(j, cell_assignment)
-                    #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
-                    Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+            for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
+                #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
+                Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+            end; end
 
-                    # Interferers
-                    if l != k
-                        J[:,(1 + J_offset):(J_offset+ds[k])] = channel.H[k,j]*state.V[l]
-                        J_offset += ds[k]
-                    end
-                end
-            end
+            # Received interference covariance
+            Psi = Phi - sigma2s[k]*eye(channel.Ns[k]) - channel.H[k,i]*(state.V[k]*state.V[k]')*channel.H[k,i]'
 
-            # MMSE stuff
-            eff_chan = channel.H[k,i]*state.V[k]
-            Ummse = Phi\eff_chan
-            state.W[k] = Hermitian((eye(ds[k]) - Ummse'*eff_chan)\eye(ds[k]))
+            # MMSE for rate calculation based on MSE weight
+            effective_channel = channel.H[k,i]*state.V[k]
+            state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
 
             # Receive filter
-            JJh = J*J'
-            state.U[k] = reshape((settings["rho"]*kron(transpose(full(state.Y[k])), JJh) + kron(transpose(full(state.Z[k])), full(Phi)))\vec(channel.H[k,i]*state.V[k]*state.Z[k]), channel.Ns[k], ds[k])
+            state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/settings["rho"])*kron(transpose(full(state.Z[k])), Psi))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
 
             # MSE
-            E = eye(ds[k]) - state.U[k]'*eff_chan - eff_chan'*state.U[k] + state.U[k]'*Phi*state.U[k]
-            state.Z[k] = Hermitian(inv(E))
+            E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
+            state.Y[k] = Hermitian(inv(E))
 
-            # Received interference
-            F = state.U[k]'*JJh*state.U[k]
-            state.Y[k] = Hermitian(inv(F + settings["delta"]*eye(F)))
+            # Leakage
+            F = settings["delta"]*eye(ds[k]) + state.U[k]'*Psi*state.U[k]
+            state.Z[k] = Hermitian(inv(F))
         end
     end
 end
@@ -142,42 +134,56 @@ end
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 
     Ps::Vector{Float64}, cell_assignment::CellAssignment, settings)
 
-    for i = 1:channel.I
-        # Virtual uplink covariance
-        Gamma = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
-        for j = 1:channel.I
-            for l in served_MS_ids(j, cell_assignment)
-                Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
+    alpha = settings["user_priorities"]
 
-                # Only works in IC....
-                if l != i
-                    Gamma += settings["rho"]*Hermitian(channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
-                end
-            end
+    for i = 1:channel.I
+        Gamma = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
+        for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
+            Gamma += Hermitian(alpha[l]*channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
+        end; end
+
+        served = served_MS_ids(i, cell_assignment)
+        Lambdas = Array(Hermitian{Complex128}, length(served)); k_idx = 1
+        for k in served
+            Lambdas[k_idx] = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
+            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
+                Lambdas[k_idx] += Hermitian(alpha[k]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
+            end; end
+
+            k_idx += 1
         end
 
         # Find optimal Lagrange multiplier
-        mu_star, Gamma_eigen =
-            optimal_mu(i, Gamma, state, channel, Ps, cell_assignment, settings)
+        mu_star, eigens =
+            optimal_mu(i, Gamma, Lambdas, state, channel, Ps, cell_assignment, settings)
 
-        # Precoders (reuse EVD)
+        # Precoders (reuse EVDs)
+        k_idx = 1
         for k in served_MS_ids(i, cell_assignment)
-            state.V[k] = Gamma_eigen.vectors*Diagonal(1./(Gamma_eigen.values .+ mu_star))*Gamma_eigen.vectors'*channel.H[k,i]'*state.U[k]*state.Z[k]
+            state.V[k] = eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
+
+            k_idx += 1
         end
     end
 end
 
 function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
-    state::LogDetHeuristicState, channel::SinglecarrierChannel,
-    Ps::Vector{Float64}, cell_assignment::CellAssignment, settings)
+    Lambdas::Vector{Hermitian{Complex128}}, state::LogDetHeuristicState,
+    channel::SinglecarrierChannel, Ps::Vector{Float64},
+    cell_assignment::CellAssignment, settings)
+
+    alpha = settings["user_priorities"]
+    served = served_MS_ids(i, cell_assignment)
 
     # Build bisector function
     bis_M = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
-    for k in served_MS_ids(i, cell_assignment)
-        #bis_M += Hermitian(channel.H[k,i]'*(state.U[k]*(state.Z[k]*state.Z[k])*state.U[k]')*channel.H[k,i])
-        Base.LinAlg.BLAS.herk!(bis_M.uplo, 'N', complex(1.), channel.H[k,i]'*state.U[k]*state.Z[k], complex(1.), bis_M.S)
+    Gamma_eigens = Array(Eigen, length(served)); k_idx = 1
+    for k in served
+        #bis_M += Hermitian(channel.H[k,i]'*(state.U[k]*(state.Y[k]*state.Y[k])*state.U[k]')*channel.H[k,i])
+        Base.LinAlg.BLAS.herk!(bis_M.uplo, 'N', complex(1.), channel.H[k,i]'*state.U[k]*state.Y[k]*alpha[k], complex(1.), bis_M.S)
+
+        Gamma_eigens[kk] = eigfact(Gamma + (1/settings["rho"])*Lambdas[k]); k_idx += 1
     end
-    Gamma_eigen = eigfact(Gamma)
     bis_JMJ_diag = real(diag(Gamma_eigen.vectors'*bis_M*Gamma_eigen.vectors))
     f(mu) = sum(bis_JMJ_diag./((Gamma_eigen.values .+ mu).*(Gamma_eigen.values .+ mu)))
 

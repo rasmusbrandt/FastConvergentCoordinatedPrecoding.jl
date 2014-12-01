@@ -106,13 +106,12 @@ precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_p
 network =
     setup_triangular3site_network(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
-        transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
 
-results = simulate_convergence(network, simulation_params, precoding_settings)
+results = simulate_SNR(network, simulation_params, precoding_settings)
 
 println("-- Saving $(simulation_params["name"]) results")
-save("convergence_$(simulation_params["name"]).jld",
+save("SNR_$(simulation_params["name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "precoding_settings", clean_precoding_settings_for_jld(precoding_settings),
      "results", results)

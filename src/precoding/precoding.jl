@@ -92,7 +92,7 @@ function calculate_allocated_power(state::HeuristicState)
     allocated_power = Array(Float64, K, max_d)
 
     for k = 1:K
-        p = [ vecnorm(state.V[k][:,n]) for n = 1:ds[k] ]
+        p = [ vecnorm(state.V[k][:,n])^2 for n = 1:ds[k] ]
 
         if ds[k] < max_d
             allocated_power[k,:] = cat(1, p, zeros(Float64, max_d - ds[k]))

@@ -32,6 +32,9 @@ simulation_params = {
 }
 precoding_settings = {
     "stop_crit" => 20,
+
+    "rho" => 1/30,
+    "delta" => 1.,
 }
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],

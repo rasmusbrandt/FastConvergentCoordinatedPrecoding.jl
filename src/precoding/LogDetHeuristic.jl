@@ -197,7 +197,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         begin
             a = 0.; k_idx = 1
             for k in served
-                a += sum(bis[k_idx]./((eigens[k_idx].values .+ mu).*(eigens[k_idx].values .+ mu)))
+                a += sum(bis[:,k_idx]./((eigens[k_idx].values .+ mu).*(eigens[k_idx].values .+ mu)))
                 k_idx += 1
             end
             return a
@@ -211,6 +211,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
             mu_lower = settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"]
             break
         end
+        k_idx += 1
     end
 
     if f(mu_lower) <= Ps[i]

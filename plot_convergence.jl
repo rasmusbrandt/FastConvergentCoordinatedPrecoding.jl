@@ -37,6 +37,7 @@ plot_params = [
     "precoding_methods" => {
         "LogDetHeuristic" => [
             ("logdet_rates", [ "key" => "g-", "legend" => "LogDetHeuristic" ]),
+            ("utilities", [ "key" => "g:", "legend" => "LogDetHeuristic" ]),
         ],
 
         "NuclearNormHeuristic" => [

@@ -14,7 +14,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
-    ds = get_no_streams(network)
+    ds = get_no_streams(network); max_d = maximum(ds)
 
     state = LogDetHeuristicState(
         Array(Matrix{Complex128}, K),
@@ -23,9 +23,10 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
         unity_MSE_weights(ds),
         initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, settings))
     objective = Float64[]
-    logdet_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
-    MMSE_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
-    allocated_power = Array(Float64, K, maximum(ds), settings["max_iters"])
+    utilities = Array(Float64, K, max_d, settings["max_iters"])
+    logdet_rates = Array(Float64, K, max_d, settings["max_iters"])
+    MMSE_rates = Array(Float64, K, max_d, settings["max_iters"])
+    allocated_power = Array(Float64, K, max_d, settings["max_iters"])
 
     iters = 0; conv_crit = Inf
     while iters < settings["max_iters"]
@@ -33,8 +34,9 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
         iters += 1
 
         # Results after this iteration
-        logdet_rates[:,:,iters], t = calculate_logdet_rates(state, settings)
+        utilities[:,:,iters], t = calculate_utilities(state, settings)
         push!(objective, t)
+        logdet_rates[:,:,iters], _ = calculate_logdet_rates(state, settings)
         MMSE_rates[:,:,iters], _ = calculate_MMSE_rates(state, settings)
         allocated_power[:,:,iters] = calculate_allocated_power(state)
 
@@ -65,11 +67,13 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     results = Dict{ASCIIString, Any}()
     if settings["output_protocol"] == 1
         results["objective"] = objective
+        results["utilities"] = utilities
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
     elseif settings["output_protocol"] == 2
         results["objective"] = objective[iters]
+        results["utilities"] = utilities[:,:,iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
         results["MMSE_rates"] = MMSE_rates[:,:,iters]
         results["allocated_power"] = allocated_power[:,:,iters]
@@ -258,4 +262,27 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         # The upper point is always feasible, therefore we use it
         return mu_upper, eigens
     end
+end
+
+function calculate_utilities(state::LogDetHeuristicState, settings)
+    alpha = settings["user_priorities"]; rho = settings["rho"]
+
+    K = length(state.W)
+    ds = Int[ size(state.W[k], 1) for k = 1:K ]; max_d = maximum(ds)
+
+    objective = 0.
+    utilities = Array(Float64, K, max_d)
+
+    for k = 1:K
+        user_util = abs(log2(eigvals(state.Y[k]))) + (1/rho)*abs(log2(eigvals(state.Z[k])))
+        objective += alpha[k]*sum(user_util)
+
+        if ds[k] < max_d
+            utilities[k,:] = cat(1, user_util, zeros(Float64, max_d - ds[k]))
+        else
+            utilities[k,:] = user_util
+        end
+    end
+
+    return utilities, objective
 end

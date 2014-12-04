@@ -82,11 +82,11 @@ function check_and_defaultize_settings!(settings, ::Type{LogDetHeuristicState})
     check_and_defaultize_settings!(settings)
 
     # Local settings
-    if !haskey(settings, "LogDetHeuristic:bisection_Gamma_cond")
-        settings["LogDetHeuristic:bisection_Gamma_cond"] = 1e10
+    if !haskey(settings, "LogDetHeuristic:bisection_matrix_cond")
+        settings["LogDetHeuristic:bisection_matrix_cond"] = 1e10
     end
-    if !haskey(settings, "LogDetHeuristic:bisection_singular_Gamma_mu_lower_bound")
-        settings["LogDetHeuristic:bisection_singular_Gamma_mu_lower_bound"] = 1e-14
+    if !haskey(settings, "LogDetHeuristic:bisection_singular_matrix_mu_lower_bound")
+        settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
     end
     if !haskey(settings, "LogDetHeuristic:bisection_max_iters")
         settings["LogDetHeuristic:bisection_max_iters"] = 5e1
@@ -99,34 +99,37 @@ end
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
     sigma2s::Vector{Float64}, cell_assignment::CellAssignment, settings)
 
-    ds = [ size(state.W[k], 1) for k = 1:channel.K ]; dtot = sum(ds)
+    rho = settings["rho"]; delta = settings["delta"]
+    ds = [ size(state.W[k], 1) for k = 1:channel.K ]
 
     for i = 1:channel.I
         for k in served_MS_ids(i, cell_assignment)
-            # Received signal covariance
-            Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
-            for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
-                #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
-                Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+            # Received interference covariance
+            Psi = Hermitian(complex(zeros(channel.Ns[k], channel.Ns[k])))
+            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
+                #Psi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
+                Base.LinAlg.BLAS.herk!(Psi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Psi.S)
             end; end
 
-            # Received interference covariance
-            Psi = Phi - sigma2s[k]*eye(channel.Ns[k]) - channel.H[k,i]*(state.V[k]*state.V[k]')*channel.H[k,i]'
-
-            # MMSE for rate calculation based on MSE weight
+            # Effective desired channel
             effective_channel = channel.H[k,i]*state.V[k]
+
+            # Total received signal covariance
+            Phi = Hermitian(Psi + effective_channel*effective_channel' + sigma2s[k]*eye(channel.Ns[k]))
+
+            # MSE weight for rate calculation (w/ MMSE filter)
             state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
 
-            # Receive filter
-            state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/settings["rho"])*kron(transpose(full(state.Z[k])), Psi))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
+            # Receive filter (N.B., not MMSE filter!)
+            state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
 
             # MSE
             E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
             state.Y[k] = Hermitian(inv(E))
 
             # Leakage
-            F = settings["delta"]*eye(ds[k]) + state.U[k]'*Psi*state.U[k]
-            state.Z[k] = Hermitian(inv(F))
+            F = state.U[k]'*Psi*state.U[k]
+            state.Z[k] = Hermitian(inv(delta*eye(ds[k]) + F))
         end
     end
 end
@@ -137,19 +140,19 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
     alpha = settings["user_priorities"]
 
     for i = 1:channel.I
-        Gamma = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
+        served = served_MS_ids(i, cell_assignment); Kc = length(served)
+
+        Gamma = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
         for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
             Gamma += Hermitian(alpha[l]*channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
         end; end
 
-        served = served_MS_ids(i, cell_assignment)
-        Lambdas = Array(Hermitian{Complex128}, length(served)); k_idx = 1
+        Lambdas = Array(Hermitian{Complex128}, Kc); k_idx = 1
         for k in served
-            Lambdas[k_idx] = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
+            Lambdas[k_idx] = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
             for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
-                Lambdas[k_idx] += Hermitian(alpha[k]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
+                Lambdas[k_idx] += Hermitian(alpha[l]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
             end; end
-
             k_idx += 1
         end
 
@@ -159,9 +162,8 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
         # Precoders (reuse EVDs)
         k_idx = 1
-        for k in served_MS_ids(i, cell_assignment)
-            state.V[k] = eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
-
+        for k in served
+            state.V[k] = alpha[k]*eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
             k_idx += 1
         end
     end
@@ -172,35 +174,58 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     channel::SinglecarrierChannel, Ps::Vector{Float64},
     cell_assignment::CellAssignment, settings)
 
-    alpha = settings["user_priorities"]
-    served = served_MS_ids(i, cell_assignment)
+    alpha = settings["user_priorities"]; rho = settings["rho"]
+    served = served_MS_ids(i, cell_assignment); Kc = length(served)
 
     # Build bisector function
-    bis_M = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
-    Gamma_eigens = Array(Eigen, length(served)); k_idx = 1
+    eigens = Array(Factorization{Complex128}, Kc)
+    bis = Array(Float64, channel.Ms[i], Kc)
+    k_idx = 1
     for k in served
-        #bis_M += Hermitian(channel.H[k,i]'*(state.U[k]*(state.Y[k]*state.Y[k])*state.U[k]')*channel.H[k,i])
-        Base.LinAlg.BLAS.herk!(bis_M.uplo, 'N', complex(1.), channel.H[k,i]'*state.U[k]*state.Y[k]*alpha[k], complex(1.), bis_M.S)
+        eigens[k_idx] = eigfact(Gamma + (1/rho)*Lambdas[k_idx])
 
-        Gamma_eigens[kk] = eigfact(Gamma + (1/settings["rho"])*Lambdas[k]); k_idx += 1
+        effective_channel = alpha[k]*channel.H[k,i]'*state.U[k]*state.Y[k]
+        bis[:,k_idx] = real(diag(eigens[k_idx].vectors'*(effective_channel*effective_channel')*eigens[k_idx].vectors))
+        k_idx += 1
     end
-    bis_JMJ_diag = real(diag(Gamma_eigen.vectors'*bis_M*Gamma_eigen.vectors))
-    f(mu) = sum(bis_JMJ_diag./((Gamma_eigen.values .+ mu).*(Gamma_eigen.values .+ mu)))
+
+    f(mu) =
+        begin
+            a = 0.; k_idx = 1
+            for k in served
+                a += sum(bis[k_idx]./((eigens[k_idx].values .+ mu).*(eigens[k_idx].values .+ mu)))
+                k_idx += 1
+            end
+            return a
+        end
 
     # mu lower bound
-    if abs(maximum(Gamma_eigen.values))/abs(minimum(Gamma_eigen.values)) < settings["LogDetHeuristic:bisection_Gamma_cond"]
-        # Gamma is invertible
-        mu_lower = 0
-    else
-        mu_lower = settings["LogDetHeuristic:bisection_singular_Gamma_mu_lower_bound"]
+    mu_lower = 0.; k_idx = 1
+    for k in served
+        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > settings["LogDetHeuristic:bisection_matrix_cond"]
+            # Matrix not invertible, resort to non-zero default
+            mu_lower = settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"]
+            break
+        end
     end
 
     if f(mu_lower) <= Ps[i]
         # No bisection needed
-        return mu_lower, Gamma_eigen
+        return mu_lower, eigens
     else
         # mu upper bound
-        mu_upper = sqrt(channel.Ms[i]/Ps[i]*maximum(bis_JMJ_diag)) - abs(minimum(Gamma_eigen.values))
+        a2s = 0.; min_lambda_eig = Inf; k_idx = 1
+        for k in served
+            a2s += alpha[k]
+            m_cand = minimum(eigens[k_idx].values)
+            if m_cand < min_lambda_eig
+                min_lambda_eig = m_cand
+            end
+            k_idx += 1
+        end
+        max_bis = maximum(bis)
+
+        mu_upper = sqrt((1/Ps[i])*max_bis*channel.Ms[i]*a2s) - min_lambda_eig
         if f(mu_upper) > Ps[i]
             error("Power bisection: infeasible mu upper bound.")
         end
@@ -231,6 +256,6 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         end
 
         # The upper point is always feasible, therefore we use it
-        return mu_upper, Gamma_eigen
+        return mu_upper, eigens
     end
 end

@@ -93,7 +93,7 @@ function check_and_defaultize_settings!(settings, ::Type{LogDetHeuristicState})
         settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
     end
     if !haskey(settings, "LogDetHeuristic:bisection_max_iters")
-        settings["LogDetHeuristic:bisection_max_iters"] = 5e1
+        settings["LogDetHeuristic:bisection_max_iters"] = 1e2
     end
     if !haskey(settings, "LogDetHeuristic:bisection_tolerance")
         settings["LogDetHeuristic:bisection_tolerance"] = 1e-3

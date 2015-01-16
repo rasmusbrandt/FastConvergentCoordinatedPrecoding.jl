@@ -62,9 +62,9 @@ function calculate_MMSE_rates(state::HeuristicState, settings)
     ds = Int[ size(state.W[k], 1) for k = 1:K ]; max_d = maximum(ds)
 
     MMSE_rates_objective = 0.
-    MMSE_rates = Array(Float64, K, max_d)
+    MMSE_rates = zeros(Float64, K, max_d)
 
-    for k = 1:K
+    for k = 1:K; if ds[k] > 0
         # Invert W to get MMSE matrix and pick out diagonal elements, to obtain
         # MSE performance of MMSE receiver. Then take log2 of the reciprocal
         # to get the rates for the streams.
@@ -80,7 +80,7 @@ function calculate_MMSE_rates(state::HeuristicState, settings)
         else
             MMSE_rates[k,:] = r
         end
-    end
+    end; end
 
     return MMSE_rates, MMSE_rates_objective
 end

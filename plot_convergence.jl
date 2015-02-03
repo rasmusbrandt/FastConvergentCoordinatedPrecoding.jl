@@ -6,6 +6,9 @@
 # Plots convergence curves.
 ##########################################################################
 
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+
 ##########################################################################
 # Load data
 #
@@ -22,16 +25,13 @@ data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
-include("src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
-
 plot_params = [
     "name_suffix" => "",
 
     "figsize" => (8,4),
 
     "objectives" => [
-        "sumrate" => (r -> sum(r, 3:4), [ "xlabel" => "Iterations", "ylabel" => "Sum rate [bits/s/Hz]" ]),
+        "sumrate" => (r -> sum(r, 4:5), [ "xlabel" => "Iterations", "ylabel" => "Sum rate [bits/s/Hz]" ]),
     ],
 
     "precoding_methods" => {
@@ -62,7 +62,5 @@ plot_params = [
 
 ##########################################################################
 # Plot it
-plot_convergence(
-    data["results"],
-    data["simulation_params"],
-    plot_params)
+processed_results = process_convergence(data["raw_results"], data["simulation_params"], plot_params)
+plot_convergence(processed_results, data["simulation_params"], plot_params)

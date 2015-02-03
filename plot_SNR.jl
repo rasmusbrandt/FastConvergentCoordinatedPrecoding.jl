@@ -6,6 +6,9 @@
 # Plots SNR curves.
 ##########################################################################
 
+include("src/InterferenceRankRegularizedWSR.jl")
+using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+
 ##########################################################################
 # Load data
 #
@@ -22,17 +25,14 @@ data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
-include("src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
-
 plot_params = [
     "name_suffix" => "",
 
     "figsize" => (8,5),
 
     "objectives" => [
-        "sumrate" => (r -> sum(r, 4:5), [ "xlabel" => "SNR [dB]", "ylabel" => "Sum rate [bits/s/Hz]" ]),
-        "minrate" => (r -> minimum(sum(r, 5), 4), [ "xlabel" => "SNR [dB]", "ylabel" => "Min rate [bits/s/Hz]", ]),
+        "sumrate" => (r -> sum(r, 5:6), [ "xlabel" => "SNR [dB]", "ylabel" => "Sum rate [bits/s/Hz]" ]),
+        "minrate" => (r -> minimum(sum(r, 6), 5), [ "xlabel" => "SNR [dB]", "ylabel" => "Min rate [bits/s/Hz]", ]),
     ],
 
     "precoding_methods" => {
@@ -63,7 +63,5 @@ plot_params = [
 
 ##########################################################################
 # Plot it
-plot_SNR(
-    data["results"],
-    data["simulation_params"],
-    plot_params)
+processed_results = process(data["raw_results"], data["simulation_params"], plot_params)
+plot(processed_results, data["simulation_params"], plot_params)

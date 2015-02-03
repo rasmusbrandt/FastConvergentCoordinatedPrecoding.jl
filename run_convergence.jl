@@ -15,14 +15,6 @@ using HDF5, JLD
 srand(867123)
 start_time = strftime("%Y%m%dT%H%M%S", time())
 
-precoding_settings = [
-    "stop_crit" => 0,
-    "max_iters" => 20,
-
-    "rho" => 1/30,
-    "delta" => 1.,
-]
-
 ##########################################################################
 # Interference channel
 simulation_params = [
@@ -38,22 +30,30 @@ simulation_params = [
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
+    ],
+    "aux_precoding_params" => [
+        "initial_precoders" => "dft",
+        "stop_crit" => 0.,
+        "max_iters" => 20,
+
+        "rho" => 1/30,
+        "delta" => 1.,
+    ],
+    "aux_independent_variables" => [
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
     ]
 ]
-precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_params["Kc"])
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
-
-results = simulate_convergence(network, simulation_params, precoding_settings)
+raw_results = simulate_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["name"]) results")
 save("convergence_$(simulation_params["name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
-     "precoding_settings", precoding_settings,
-     "results", results)
+     "raw_results", raw_results)
 
 ##########################################################################
 # Interfering broadcast channel
@@ -70,22 +70,30 @@ simulation_params = [
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
+    ],
+    "aux_precoding_params" => [
+        "initial_precoders" => "dft",
+        "stop_crit" => 0.,
+        "max_iters" => 20,
+
+        "rho" => 1/30,
+        "delta" => 1.,
+    ],
+    "aux_independent_variables" => [
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
     ]
 ]
-precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_params["Kc"])
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
-
-results = simulate_convergence(network, simulation_params, precoding_settings)
+raw_results = simulate_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["name"]) results")
 save("convergence_$(simulation_params["name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
-     "precoding_settings", precoding_settings,
-     "results", results)
+     "raw_results", raw_results)
 
 ##########################################################################
 # Triangular3Site network
@@ -102,19 +110,27 @@ simulation_params = [
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
+    ],
+    "aux_precoding_params" => [
+        "initial_precoders" => "dft",
+        "stop_crit" => 0.,
+        "max_iters" => 20,
+
+        "rho" => 1/30,
+        "delta" => 1.,
+    ],
+    "aux_independent_variables" => [
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
     ]
 ]
-precoding_settings["user_priorities"] = ones(simulation_params["I"]*simulation_params["Kc"])
 network =
     setup_triangular3site_network(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
-
-results = simulate_convergence(network, simulation_params, precoding_settings)
+raw_results = simulate_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["name"]) results")
 save("convergence_$(simulation_params["name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
-     "precoding_settings", precoding_settings,
-     "results", results)
+     "raw_results", raw_results)

@@ -7,71 +7,72 @@ immutable LogDetHeuristicState
 end
 
 function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
-    cell_assignment::CellAssignment, settings=Dict())
-
-    check_and_defaultize_settings!(settings, LogDetHeuristicState)
+    cell_assignment::CellAssignment)
 
     K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network); max_d = maximum(ds)
+    alphas = get_user_priorities(network); alphas_diagm = diagm(alphas)
+    aux_params = get_aux_precoding_params(network)
+    check_aux_precoding_params!(aux_params, LogDetHeuristicState)
 
     state = LogDetHeuristicState(
         Array(Matrix{Complex128}, K),
         unity_MSE_weights(ds),
         unity_MSE_weights(ds),
         unity_MSE_weights(ds),
-        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, settings))
+        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, aux_params))
     objective = Float64[]
-    utilities = Array(Float64, K, max_d, settings["max_iters"])
-    logdet_rates = Array(Float64, K, max_d, settings["max_iters"])
-    MMSE_rates = Array(Float64, K, max_d, settings["max_iters"])
-    allocated_power = Array(Float64, K, max_d, settings["max_iters"])
+    utilities = Array(Float64, K, max_d, aux_params["max_iters"])
+    logdet_rates = Array(Float64, K, max_d, aux_params["max_iters"])
+    MMSE_rates = Array(Float64, K, max_d, aux_params["max_iters"])
+    allocated_power = Array(Float64, K, max_d, aux_params["max_iters"])
 
     iters = 0; conv_crit = Inf
-    while iters < settings["max_iters"]
-        update_MSs!(state, channel, sigma2s, cell_assignment, settings)
+    while iters < aux_params["max_iters"]
+        update_MSs!(state, channel, sigma2s, cell_assignment, aux_params)
         iters += 1
 
         # Results after this iteration
-        utilities[:,:,iters], t = calculate_utilities(state, settings)
-        push!(objective, t)
-        logdet_rates[:,:,iters], _ = calculate_logdet_rates(state, settings)
-        MMSE_rates[:,:,iters], _ = calculate_MMSE_rates(state, settings)
+        utilities[:,:,iters] = calculate_utilities(state, aux_params)
+        push!(objective, sum(alphas_diagm*utilities[:,:,iters]))
+        logdet_rates[:,:,iters] = calculate_logdet_rates(state)
+        MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
         allocated_power[:,:,iters] = calculate_allocated_power(state)
 
         # Check convergence
         if iters >= 2
             conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
-            if conv_crit < settings["stop_crit"]
+            if conv_crit < aux_params["stop_crit"]
                 Lumberjack.debug("LogDetHeuristic converged.",
                     { :no_iters => iters, :final_objective => objective[end],
-                      :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
-                      :max_iters => settings["max_iters"] })
+                      :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
+                      :max_iters => aux_params["max_iters"] })
                 break
             end
         end
 
         # Begin next iteration, unless the loop will end
-        if iters < settings["max_iters"]
-            update_BSs!(state, channel, Ps, cell_assignment, settings)
+        if iters < aux_params["max_iters"]
+            update_BSs!(state, channel, Ps, alphas, cell_assignment, aux_params)
         end
     end
-    if iters == settings["max_iters"]
+    if iters == aux_params["max_iters"]
         Lumberjack.debug("LogDetHeuristic did NOT converge.",
             { :no_iters => iters, :final_objective => objective[end],
-              :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
-              :max_iters => settings["max_iters"] })
+              :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
+              :max_iters => aux_params["max_iters"] })
     end
 
-    results = Dict{ASCIIString, Any}()
-    if settings["output_protocol"] == 1
+    results = PrecodingResults()
+    if aux_params["output_protocol"] == 1
         results["objective"] = objective
         results["utilities"] = utilities
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
-    elseif settings["output_protocol"] == 2
+    elseif aux_params["output_protocol"] == 2
         results["objective"] = objective[iters]
         results["utilities"] = utilities[:,:,iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
@@ -81,29 +82,26 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     return results
 end
 
-function check_and_defaultize_settings!(settings, ::Type{LogDetHeuristicState})
-    # Global settings
-    check_and_defaultize_settings!(settings)
-
-    # Local settings
-    if !haskey(settings, "LogDetHeuristic:bisection_matrix_cond")
-        settings["LogDetHeuristic:bisection_matrix_cond"] = 1e10
+function check_aux_precoding_params!(aux_params, ::Type{LogDetHeuristicState})
+    if !haskey(aux_params, "LogDetHeuristic:bisection_matrix_cond")
+        aux_params["LogDetHeuristic:bisection_matrix_cond"] = 1e10
     end
-    if !haskey(settings, "LogDetHeuristic:bisection_singular_matrix_mu_lower_bound")
-        settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
+    if !haskey(aux_params, "LogDetHeuristic:bisection_singular_matrix_mu_lower_bound")
+        aux_params["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
     end
-    if !haskey(settings, "LogDetHeuristic:bisection_max_iters")
-        settings["LogDetHeuristic:bisection_max_iters"] = 1e2
+    if !haskey(aux_params, "LogDetHeuristic:bisection_max_iters")
+        aux_params["LogDetHeuristic:bisection_max_iters"] = 1e2
     end
-    if !haskey(settings, "LogDetHeuristic:bisection_tolerance")
-        settings["LogDetHeuristic:bisection_tolerance"] = 1e-3
+    if !haskey(aux_params, "LogDetHeuristic:bisection_tolerance")
+        aux_params["LogDetHeuristic:bisection_tolerance"] = 1e-3
     end
 end
 
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
-    sigma2s::Vector{Float64}, cell_assignment::CellAssignment, settings)
+    sigma2s::Vector{Float64}, cell_assignment::CellAssignment,
+    aux_params::AuxPrecodingParams)
 
-    rho = settings["rho"]; delta = settings["delta"]
+    rho = aux_params["rho"]; delta = aux_params["delta"]
     ds = [ size(state.W[k], 1) for k = 1:channel.K ]
 
     for i = 1:channel.I
@@ -124,50 +122,51 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
             # MSE weight for rate calculation (w/ MMSE filter)
             state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
 
-            # Receive filter (N.B., not MMSE filter!)
-            state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
+            for turbo_iters = 1:aux_params["turbo_iters"]
+                # Receive filter (N.B., not MMSE filter!)
+                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
 
-            # MSE
-            E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
-            state.Y[k] = Hermitian(inv(E))
+                # MSE
+                E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
+                state.Y[k] = Hermitian(inv(E))
 
-            # Leakage
-            F = state.U[k]'*Psi*state.U[k]
-            state.Z[k] = Hermitian(inv(delta*eye(ds[k]) + F))
+                # Leakage
+                F = state.U[k]'*Psi*state.U[k]
+                state.Z[k] = Hermitian(inv(delta*eye(ds[k]) + F))
+            end
         end
     end
 end
 
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 
-    Ps::Vector{Float64}, cell_assignment::CellAssignment, settings)
-
-    alpha = settings["user_priorities"]
+    Ps::Vector{Float64}, alphas::Vector{Float64},
+    cell_assignment::CellAssignment, aux_params::AuxPrecodingParams)
 
     for i = 1:channel.I
         served = served_MS_ids(i, cell_assignment); Kc = length(served)
 
         Gamma = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
         for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
-            Gamma += Hermitian(alpha[l]*channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
+            Gamma += Hermitian(alphas[l]*channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
         end; end
 
         Lambdas = Array(Hermitian{Complex128}, Kc); k_idx = 1
         for k in served
             Lambdas[k_idx] = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
             for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
-                Lambdas[k_idx] += Hermitian(alpha[l]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
+                Lambdas[k_idx] += Hermitian(alphas[l]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
             end; end
             k_idx += 1
         end
 
         # Find optimal Lagrange multiplier
         mu_star, eigens =
-            optimal_mu(i, Gamma, Lambdas, state, channel, Ps, cell_assignment, settings)
+            optimal_mu(i, Gamma, Lambdas, state, channel, Ps, alphas, cell_assignment, aux_params)
 
         # Precoders (reuse EVDs)
         k_idx = 1
         for k in served
-            state.V[k] = alpha[k]*eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
+            state.V[k] = alphas[k]*eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
             k_idx += 1
         end
     end
@@ -175,10 +174,10 @@ end
 
 function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     Lambdas::Vector{Hermitian{Complex128}}, state::LogDetHeuristicState,
-    channel::SinglecarrierChannel, Ps::Vector{Float64},
-    cell_assignment::CellAssignment, settings)
+    channel::SinglecarrierChannel, Ps::Vector{Float64}, alphas::Vector{Float64},
+    cell_assignment::CellAssignment, aux_params::AuxPrecodingParams)
 
-    alpha = settings["user_priorities"]; rho = settings["rho"]
+    rho = aux_params["rho"]
     served = served_MS_ids(i, cell_assignment); Kc = length(served)
 
     # Build bisector function
@@ -188,7 +187,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     for k in served
         eigens[k_idx] = eigfact(Gamma + (1/rho)*Lambdas[k_idx])
 
-        effective_channel = alpha[k]*channel.H[k,i]'*state.U[k]*state.Y[k]
+        effective_channel = alphas[k]*channel.H[k,i]'*state.U[k]*state.Y[k]
         bis[:,k_idx] = real(diag(eigens[k_idx].vectors'*(effective_channel*effective_channel')*eigens[k_idx].vectors))
         k_idx += 1
     end
@@ -206,9 +205,9 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     # mu lower bound
     mu_lower = 0.; k_idx = 1
     for k in served
-        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > settings["LogDetHeuristic:bisection_matrix_cond"]
+        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > aux_params["LogDetHeuristic:bisection_matrix_cond"]
             # Matrix not invertible, resort to non-zero default
-            mu_lower = settings["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"]
+            mu_lower = aux_params["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"]
             break
         end
         k_idx += 1
@@ -221,7 +220,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         # mu upper bound
         a2s = 0.; min_lambda_eig = Inf; k_idx = 1
         for k in served
-            a2s += alpha[k]
+            a2s += alphas[k]
             m_cand = minimum(eigens[k_idx].values)
             if m_cand < min_lambda_eig
                 min_lambda_eig = m_cand
@@ -236,10 +235,10 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         end
 
         no_iters = 0
-        while no_iters < settings["LogDetHeuristic:bisection_max_iters"]
+        while no_iters < aux_params["LogDetHeuristic:bisection_max_iters"]
             conv_crit = (Ps[i] - f(mu_upper))/Ps[i]
 
-            if conv_crit < settings["LogDetHeuristic:bisection_tolerance"]
+            if conv_crit < aux_params["LogDetHeuristic:bisection_tolerance"]
                 break
             else
                 mu = (1/2)*(mu_lower + mu_upper)
@@ -256,7 +255,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
             no_iters += 1
         end
 
-        if no_iters == settings["LogDetHeuristic:bisection_max_iters"]
+        if no_iters == aux_params["LogDetHeuristic:bisection_max_iters"]
             println("Power bisection: reached max iterations.")
         end
 
@@ -265,18 +264,17 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     end
 end
 
-function calculate_utilities(state::LogDetHeuristicState, settings)
-    alpha = settings["user_priorities"]; rho = settings["rho"]
+function calculate_utilities(state::LogDetHeuristicState, aux_params::AuxPrecodingParams)
+
+    rho = aux_params["rho"]
 
     K = length(state.W)
     ds = Int[ size(state.W[k], 1) for k = 1:K ]; max_d = maximum(ds)
 
-    objective = 0.
     utilities = Array(Float64, K, max_d)
 
     for k = 1:K
         user_util = abs(log2(eigvals(state.Y[k]))) + (1/rho)*abs(log2(eigvals(state.Z[k])))
-        objective += alpha[k]*sum(user_util)
 
         if ds[k] < max_d
             utilities[k,:] = cat(1, user_util, zeros(Float64, max_d - ds[k]))
@@ -285,5 +283,5 @@ function calculate_utilities(state::LogDetHeuristicState, settings)
         end
     end
 
-    return utilities, objective
+    return utilities
 end

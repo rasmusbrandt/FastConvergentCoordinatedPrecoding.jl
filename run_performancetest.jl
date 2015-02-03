@@ -23,12 +23,20 @@ simulation_params = {
     "Ntest" => 100,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
-    ]
+    ],
+    "aux_precoding_params" => [
+        "initial_precoders" => "dft",
+        "stop_crit" => 0.,
+        "turbo_iters" => 10,
+
+        "rho" => 1/30,
+        "delta" => 1.,
+    ],
 }
 precoding_settings = {
     "stop_crit" => 20,
@@ -42,4 +50,4 @@ network =
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
 
-perform_performancetest(network, simulation_params, precoding_settings)
+simulate_performance(network, simulation_params)

@@ -13,7 +13,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network); max_d = maximum(ds)
-    alphas = get_user_priorities(network); alphas_diagm = diagm(alphas)
+    alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
     aux_params = get_aux_precoding_params(network)
     check_aux_precoding_params!(aux_params, LogDetHeuristicState)
 
@@ -36,7 +36,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
 
         # Results after this iteration
         utilities[:,:,iters] = calculate_utilities(state, aux_params)
-        push!(objective, sum(alphas_diagm*utilities[:,:,iters]))
+        push!(objective, sum(alphas_diagonal*utilities[:,:,iters]))
         logdet_rates[:,:,iters] = calculate_logdet_rates(state)
         MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
         allocated_power[:,:,iters] = calculate_allocated_power(state)

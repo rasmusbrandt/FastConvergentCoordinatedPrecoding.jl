@@ -188,7 +188,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         eigens[k_idx] = eigfact(Gamma + (1/rho)*Lambdas[k_idx])
 
         effective_channel = alphas[k]*channel.H[k,i]'*state.U[k]*state.Y[k]
-        bis[:,k_idx] = real(diag(eigens[k_idx].vectors'*(effective_channel*effective_channel')*eigens[k_idx].vectors))
+        bis[:,k_idx] = abs(diag(eigens[k_idx].vectors'*(effective_channel*effective_channel')*eigens[k_idx].vectors))
         k_idx += 1
     end
 
@@ -218,18 +218,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         return mu_lower, eigens
     else
         # mu upper bound
-        a2s = 0.; min_lambda_eig = Inf; k_idx = 1
-        for k in served
-            a2s += alphas[k]
-            m_cand = minimum(eigens[k_idx].values)
-            if m_cand < min_lambda_eig
-                min_lambda_eig = m_cand
-            end
-            k_idx += 1
-        end
-        max_bis = maximum(bis)
-
-        mu_upper = sqrt((1/Ps[i])*max_bis*channel.Ms[i]*a2s) - min_lambda_eig
+        mu_upper = sqrt((1/Ps[i])*maximum(bis)*channel.Ms[i]*sum(alphas.^2)) - minimum([minimum(eigens[k_idx].values) for k_idx = 1:Kc])
         if f(mu_upper) > Ps[i]
             error("Power bisection: infeasible mu upper bound.")
         end

@@ -5,66 +5,68 @@ immutable NuclearNormHeuristicState
 end
 
 function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
-    cell_assignment::CellAssignment, settings=Dict())
-
-    check_and_defaultize_settings!(settings, NuclearNormHeuristicState)
+    cell_assignment::CellAssignment)
 
     K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
-    ds = get_no_streams(network)
+    ds = get_no_streams(network); max_d = maximum(ds)
+    alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
+    aux_params = get_aux_precoding_params(network)
+    check_aux_precoding_params!(aux_params, NuclearNormHeuristicState)
 
     state = NuclearNormHeuristicState(
         Array(Matrix{Complex128}, K),
         unity_MSE_weights(ds),
-        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, settings))
+        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, aux_params))
     objective = Float64[]
-    logdet_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
-    MMSE_rates = Array(Float64, K, maximum(ds), settings["max_iters"])
-    allocated_power = Array(Float64, K, maximum(ds), settings["max_iters"])
+    utilities = Array(Float64, K, max_d, aux_params["max_iters"])
+    logdet_rates = Array(Float64, K, max_d, aux_params["max_iters"])
+    MMSE_rates = Array(Float64, K, max_d, aux_params["max_iters"])
+    allocated_power = Array(Float64, K, max_d, aux_params["max_iters"])
 
     iters = 0; conv_crit = Inf
-    while iters < settings["max_iters"]
-        update_MSs!(state, channel, sigma2s, cell_assignment, settings)
+    while iters < aux_params["max_iters"]
+        update_MSs!(state, channel, sigma2s, cell_assignment, aux_params)
         iters += 1
 
         # Results after this iteration
-        logdet_rates[:,:,iters], t = calculate_logdet_rates(state, settings)
-        push!(objective, t)
-        MMSE_rates[:,:,iters], _ = calculate_MMSE_rates(state, settings)
+        logdet_rates[:,:,iters] = calculate_logdet_rates(state)
+        push!(objective, sum(alphas_diagonal*logdet_rates[:,:,iters]))
+        MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
         allocated_power[:,:,iters] = calculate_allocated_power(state)
 
         # Check convergence
         if iters >= 2
             conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
-            if conv_crit < settings["stop_crit"]
-                Lumberjack.debug("LogDetHeuristic converged.",
+            if conv_crit < aux_params["stop_crit"]
+                Lumberjack.debug("NuclearNormHeuristic converged.",
                     { :no_iters => iters, :final_objective => objective[end],
-                      :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
-                      :max_iters => settings["max_iters"] })
+                      :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
+                      :max_iters => aux_params["max_iters"] })
                 break
             end
         end
 
         # Begin next iteration, unless the loop will end
-        if iters < settings["max_iters"]
-            update_BSs!(state, channel, Ps, cell_assignment, settings)
+        if iters < aux_params["max_iters"]
+            update_BSs!(state, channel, Ps, cell_assignment, aux_params)
         end
     end
-    if iters == settings["max_iters"]
-        Lumberjack.debug("LogDetHeuristic did NOT converge.",
+    if iters == aux_params["max_iters"]
+        Lumberjack.debug("NuclearNormHeuristic did NOT converge.",
             { :no_iters => iters, :final_objective => objective[end],
-              :conv_crit => conv_crit, :stop_crit => settings["stop_crit"],
-              :max_iters => settings["max_iters"] })
+              :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
+              :max_iters => aux_params["max_iters"] })
     end
 
-    results = Dict{ASCIIString, Any}()
-    if settings["output_protocol"] == 1
+    results = PrecodingResults()
+    if aux_params["output_protocol"] == 1
         results["objective"] = objective
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
-    elseif settings["output_protocol"] == 2
+    elseif aux_params["output_protocol"] == 2
         results["objective"] = objective[iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
         results["MMSE_rates"] = MMSE_rates[:,:,iters]
@@ -73,31 +75,18 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
     return results
 end
 
-function check_and_defaultize_settings!(settings, ::Type{NuclearNormHeuristicState})
-    # Global settings
-    check_and_defaultize_settings!(settings)
-
-    # Local settings
-    if !haskey(settings, "NuclearNormHeuristic:perform_regularization")
-        settings["NuclearNormHeuristic:perform_regularization"] = true
+function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicState})
+    if !haskey(aux_params, "NuclearNormHeuristic:perform_regularization")
+        aux_params["NuclearNormHeuristic:perform_regularization"] = true
     end
-    if !haskey(settings, "NuclearNormHeuristic:solver")
-        if settings["NuclearNormHeuristic:perform_regularization"] == false
-            # ECOS gives sufficiently accurate results for the BCD to converge.
-            settings["NuclearNormHeuristic:solver"] = ECOS.ECOSMathProgModel()
-        else
-            # Empirically, it seems that SCS does not give sufficiently accurate
-            # results to reproduce the closed-form WMMSE solutions when the
-            # regularization is turned off. I probably need another solver, and
-            # thus I have to wait for support for this in Convex.jl.
-            settings["NuclearNormHeuristic:solver"] = SCS.SCSMathProgModel()
-        end
+    if !haskey(aux_params, "NuclearNormHeuristic:solver")
+        aux_params["NuclearNormHeuristic:solver"] = SCS.SCSSolver(verbose=0)
     end
 end
 
 function update_MSs!(state::NuclearNormHeuristicState,
     channel::SinglecarrierChannel, sigma2s::Vector{Float64},
-    cell_assignment::CellAssignment, settings)
+    cell_assignment::CellAssignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
@@ -134,16 +123,16 @@ function update_MSs!(state::NuclearNormHeuristicState,
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
             MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
 
-            if settings["NuclearNormHeuristic:perform_regularization"]
+            if aux_params["NuclearNormHeuristic:perform_regularization"]
                 IntfNN_obj = Convex.nuclear_norm(Us'*J_ext)
 
-                problem = Convex.minimize(MSE + settings["rho"]*IntfNN_obj)
+                problem = Convex.minimize(MSE + aux_params["rho"]*IntfNN_obj)
             else
                 # Solve standard MSE problem
                 problem = Convex.minimize(MSE)
             end
 
-            Convex.solve!(problem, settings["NuclearNormHeuristic:solver"])
+            Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
                 state.U[k] = Ur + im*Ui
@@ -159,7 +148,7 @@ end
 
 function update_BSs!(state::NuclearNormHeuristicState,
     channel::SinglecarrierChannel, Ps::Vector{Float64},
-    cell_assignment::CellAssignment, settings)
+    cell_assignment::CellAssignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
@@ -197,7 +186,7 @@ function update_BSs!(state::NuclearNormHeuristicState,
     end
 
     # Interference subspace basis nuclear norm regularization
-    if settings["NuclearNormHeuristic:perform_regularization"]
+    if aux_params["NuclearNormHeuristic:perform_regularization"]
         for i = 1:channel.I
             for k = served_MS_ids(i, cell_assignment)
                 J_ext = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
@@ -217,13 +206,13 @@ function update_BSs!(state::NuclearNormHeuristicState,
 
                 IntfNN_obj = Convex.nuclear_norm(U_ext'*J_ext)
 
-                objective += settings["rho"]*IntfNN_obj
+                objective += aux_params["rho"]*IntfNN_obj
             end
         end
     end
 
     problem = Convex.minimize(objective, constraints)
-    Convex.solve!(problem, settings["NuclearNormHeuristic:solver"])
+    Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I
             for k in served_MS_ids(i, cell_assignment)

@@ -16,12 +16,12 @@ using InterferenceRankRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD, ArgParse
 s = ArgParseSettings()
 @add_arg_table s begin
-    "file_name"
-        help = "file name with results"
+    "file_names"
+        help = "file names with results"
         required = true
+        nargs = '+'
 end
 parsed_args = parse_args(s)
-data = load(parsed_args["file_name"])
 
 ##########################################################################
 # Plot parameters
@@ -62,5 +62,8 @@ plot_params = [
 
 ##########################################################################
 # Plot it
-processed_results = process_convergence(data["raw_results"], data["simulation_params"], plot_params)
-plot_convergence(processed_results, data["simulation_params"], plot_params)
+for file_name in parsed_args["file_names"]
+    data = load(file_name)
+    processed_results = process_convergence(data["raw_results"], data["simulation_params"], plot_params)
+    plot_convergence(processed_results, data["simulation_params"], plot_params)
+end

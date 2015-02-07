@@ -32,7 +32,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 20,
 
@@ -72,7 +72,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 20,
 
@@ -112,7 +112,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 20,
 

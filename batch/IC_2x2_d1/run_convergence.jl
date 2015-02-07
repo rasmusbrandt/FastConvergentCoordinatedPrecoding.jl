@@ -40,7 +40,7 @@ simulation_params = [
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 3, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =

@@ -34,13 +34,13 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "dft",
         "stop_crit" => 0.,
-        "max_iters" => 20,
+        "max_iters" => 7,
 
         "rho" => 3e-2,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 5, 10]),
     ]
 ]
 network =

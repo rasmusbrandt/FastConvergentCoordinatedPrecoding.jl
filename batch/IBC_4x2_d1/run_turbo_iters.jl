@@ -1,9 +1,9 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_rho.jl
+# run_turbo_iters.jl
 #
-# Performance vs. rho
+# Performance vs. turbo_iters
 ##########################################################################
 
 include("../../src/InterferenceRankRegularizedWSR.jl")
@@ -18,7 +18,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 ##########################################################################
 # Interference channel
 simulation_params = [
-    "name" => "rho_$(start_time)",
+    "name" => "turbo_iters_$(start_time)",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 30.,
     "d" => 1,
@@ -34,12 +34,14 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "dft",
         "stop_crit" => 0.,
-        "max_iters" => 3,
-        "turbo_iters" => 5,
 
+        "rho" => 3e-2,
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-4, 2, 100)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), 1:5),
+    "aux_independent_variables" => [
+        ((n, v) -> set_aux_precoding_param!(n, v, "max_iters"), [2, 3, 4]),
+    ]
 ]
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],

@@ -35,7 +35,7 @@ simulation_params = [
         "initial_precoders" => "dft",
         "stop_crit" => 0.,
         "max_iters" => 3,
-        "turbo_iters" => 10,
+        "turbo_iters" => 5,
 
         "rho" => 3e-2,
     ],

@@ -1,9 +1,9 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# plot_SNR.jl
+# plot_turbo_iters.jl
 #
-# Plots SNR curves.
+# Plots turbo_iters curves.
 ##########################################################################
 
 include("../../src/InterferenceRankRegularizedWSR.jl")
@@ -31,7 +31,7 @@ plot_params = [
     "figsize" => (8,4),
 
     "objectives" => [
-        "sumrate" => (r -> sum(r, 5:6), [ "xlabel" => "Transmit power [dBm]", "ylabel" => "Sum rate [bits/s/Hz]" ]),
+        "sumrate" => (r -> sum(r, 5:6), [ "xlabel" => "turbo_iters", "ylabel" => "Sum rate [bits/s/Hz]" ]),
     ],
 
     "precoding_methods" => {

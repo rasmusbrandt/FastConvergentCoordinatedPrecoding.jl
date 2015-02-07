@@ -36,7 +36,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1/30,
+        "rho" => 1e-2,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -60,7 +60,7 @@ save("convergence_$(simulation_params["name"]).jld",
 simulation_params = [
     "name" => "$(start_time)-ibc",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
-    "P_dBm" => 20.,
+    "P_dBm" => 30.,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
@@ -76,7 +76,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1/30,
+        "rho" => 1/100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -100,7 +100,7 @@ save("convergence_$(simulation_params["name"]).jld",
 simulation_params = [
     "name" => "$(start_time)-triangular3site",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
-    "P_dBm" => 18.2,
+    "P_dBm" => 30.,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
@@ -116,7 +116,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1/30,
+        "rho" => 1/100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [

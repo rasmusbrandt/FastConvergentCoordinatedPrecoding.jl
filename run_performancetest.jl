@@ -34,7 +34,7 @@ simulation_params = {
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
-        "rho" => 1/30,
+        "rho" => 1e-2,
         "delta" => 1.,
     ],
 }

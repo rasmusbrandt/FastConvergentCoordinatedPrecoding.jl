@@ -12,10 +12,11 @@ import Lumberjack, Convex, ECOS, SCS
 
 export
     # precoding
-    LogDetHeuristic, NuclearNormHeuristic
+    LogDetHeuristic, NuclearNormHeuristicLinearized, NuclearNormHeuristicMosek
 
 include("precoding/LogDetHeuristic.jl")
-include("precoding/NuclearNormHeuristic.jl")
+include("precoding/NuclearNormHeuristicLinearized.jl")
+include("precoding/NuclearNormHeuristicMosek.jl")
 
 ##########################################################################
 # Logging defaults

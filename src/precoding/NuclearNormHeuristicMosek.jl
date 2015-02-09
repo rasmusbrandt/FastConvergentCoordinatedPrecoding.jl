@@ -1,10 +1,10 @@
-immutable NuclearNormHeuristicState
+immutable NuclearNormHeuristicMosekState
     U::Array{Matrix{Complex128},1}
     W::Array{Hermitian{Complex128},1}
     V::Array{Matrix{Complex128},1}
 end
 
-function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
+function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Network,
     cell_assignment::CellAssignment)
 
     K = get_no_MSs(network)
@@ -13,9 +13,9 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
     ds = get_no_streams(network); max_d = maximum(ds)
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
     aux_params = get_aux_precoding_params(network)
-    check_aux_precoding_params!(aux_params, NuclearNormHeuristicState)
+    check_aux_precoding_params!(aux_params, NuclearNormHeuristicMosekState)
 
-    state = NuclearNormHeuristicState(
+    state = NuclearNormHeuristicMosekState(
         Array(Matrix{Complex128}, K),
         unity_MSE_weights(ds),
         initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, aux_params))
@@ -75,7 +75,7 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network,
     return results
 end
 
-function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicState})
+function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicMosekState})
     if !haskey(aux_params, "NuclearNormHeuristic:perform_regularization")
         aux_params["NuclearNormHeuristic:perform_regularization"] = true
     end
@@ -84,7 +84,7 @@ function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicStat
     end
 end
 
-function update_MSs!(state::NuclearNormHeuristicState,
+function update_MSs!(state::NuclearNormHeuristicMosekState,
     channel::SinglecarrierChannel, sigma2s::Vector{Float64},
     cell_assignment::CellAssignment, aux_params)
 
@@ -146,7 +146,7 @@ function update_MSs!(state::NuclearNormHeuristicState,
     end
 end
 
-function update_BSs!(state::NuclearNormHeuristicState,
+function update_BSs!(state::NuclearNormHeuristicMosekState,
     channel::SinglecarrierChannel, Ps::Vector{Float64},
     cell_assignment::CellAssignment, aux_params)
 

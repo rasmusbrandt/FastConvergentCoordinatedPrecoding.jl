@@ -41,9 +41,14 @@ plot_params = [
             ("utilities", [ "key" => "g:", "legend" => "LogDetHeuristic" ]),
         ],
 
-        "NuclearNormHeuristic" => [
-            ("logdet_rates", [ "key" => "y-", "legend" => "NuclearNormHeuristic" ]),
+        "NuclearNormHeuristicLinearized" => [
+            ("logdet_rates", [ "key" => "y-", "legend" => "NuclearNormHeuristicLinearized" ]),
         ],
+
+        "NuclearNormHeuristicMosek" => [
+            ("logdet_rates", [ "key" => "y:", "legend" => "NuclearNormHeuristicMosek" ]),
+        ],
+
 
         "Shi2011_WMMSE" => [
             ("logdet_rates", [ "key" => "b-", "legend" => "WMMSE" ]),

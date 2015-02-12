@@ -14,8 +14,12 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network); max_d = maximum(ds)
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
+
     aux_params = get_aux_precoding_params(network)
-    check_aux_precoding_params!(aux_params, LogDetHeuristicState)
+    @defaultize_param! aux_params "LogDetHeuristic:bisection_matrix_cond" 1e10
+    @defaultize_param! aux_params "LogDetHeuristic:bisection_singular_matrix_mu_lower_bound" 1e-14
+    @defaultize_param! aux_params "LogDetHeuristic:bisection_max_iters" 1e2
+    @defaultize_param! aux_params "LogDetHeuristic:bisection_tolerance" 1e-3
 
     state = LogDetHeuristicState(
         Array(Matrix{Complex128}, K),
@@ -66,13 +70,13 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
     end
 
     results = PrecodingResults()
-    if aux_params["output_protocol"] == 1
+    if aux_params["output_protocol"] == :all_iterations
         results["objective"] = objective
         results["utilities"] = utilities
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
-    elseif aux_params["output_protocol"] == 2
+    elseif aux_params["output_protocol"] == :final_iteration
         results["objective"] = objective[iters]
         results["utilities"] = utilities[:,:,iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
@@ -80,21 +84,6 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network,
         results["allocated_power"] = allocated_power[:,:,iters]
     end
     return results
-end
-
-function check_aux_precoding_params!(aux_params, ::Type{LogDetHeuristicState})
-    if !haskey(aux_params, "LogDetHeuristic:bisection_matrix_cond")
-        aux_params["LogDetHeuristic:bisection_matrix_cond"] = 1e10
-    end
-    if !haskey(aux_params, "LogDetHeuristic:bisection_singular_matrix_mu_lower_bound")
-        aux_params["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
-    end
-    if !haskey(aux_params, "LogDetHeuristic:bisection_max_iters")
-        aux_params["LogDetHeuristic:bisection_max_iters"] = 1e2
-    end
-    if !haskey(aux_params, "LogDetHeuristic:bisection_tolerance")
-        aux_params["LogDetHeuristic:bisection_tolerance"] = 1e-3
-    end
 end
 
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,

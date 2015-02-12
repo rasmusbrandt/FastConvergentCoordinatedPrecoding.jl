@@ -12,8 +12,10 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network); max_d = maximum(ds)
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
+
     aux_params = get_aux_precoding_params(network)
-    check_aux_precoding_params!(aux_params, NuclearNormHeuristicMosekState)
+    @defaultize_param! aux_params "NuclearNormHeuristicMosek:perform_regularization" true
+    @defaultize_param! aux_params "NuclearNormHeuristicMosek:solver" SCS.SCSSolver(verbose=0)
 
     state = NuclearNormHeuristicMosekState(
         Array(Matrix{Complex128}, K),
@@ -61,27 +63,18 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
     end
 
     results = PrecodingResults()
-    if aux_params["output_protocol"] == 1
+    if aux_params["output_protocol"] == :all_iterations
         results["objective"] = objective
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
-    elseif aux_params["output_protocol"] == 2
+    elseif aux_params["output_protocol"] == :final_iteration
         results["objective"] = objective[iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
         results["MMSE_rates"] = MMSE_rates[:,:,iters]
         results["allocated_power"] = allocated_power[:,:,iters]
     end
     return results
-end
-
-function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicMosekState})
-    if !haskey(aux_params, "NuclearNormHeuristic:perform_regularization")
-        aux_params["NuclearNormHeuristic:perform_regularization"] = true
-    end
-    if !haskey(aux_params, "NuclearNormHeuristic:solver")
-        aux_params["NuclearNormHeuristic:solver"] = SCS.SCSSolver(verbose=0)
-    end
 end
 
 function update_MSs!(state::NuclearNormHeuristicMosekState,
@@ -123,7 +116,7 @@ function update_MSs!(state::NuclearNormHeuristicMosekState,
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
             MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
 
-            if aux_params["NuclearNormHeuristic:perform_regularization"]
+            if aux_params["NuclearNormHeuristicMosek:perform_regularization"]
                 IntfNN_obj = Convex.nuclear_norm(Us'*J_ext)
 
                 problem = Convex.minimize(MSE + aux_params["rho"]*IntfNN_obj)
@@ -132,7 +125,7 @@ function update_MSs!(state::NuclearNormHeuristicMosekState,
                 problem = Convex.minimize(MSE)
             end
 
-            Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
+            Convex.solve!(problem, aux_params["NuclearNormHeuristicMosek:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
                 state.U[k] = Ur + im*Ui
@@ -186,7 +179,7 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
     end
 
     # Interference subspace basis nuclear norm regularization
-    if aux_params["NuclearNormHeuristic:perform_regularization"]
+    if aux_params["NuclearNormHeuristicMosek:perform_regularization"]
         for i = 1:channel.I
             for k = served_MS_ids(i, cell_assignment)
                 J_ext = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
@@ -212,7 +205,7 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
     end
 
     problem = Convex.minimize(objective, constraints)
-    Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
+    Convex.solve!(problem, aux_params["NuclearNormHeuristicMosek:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I
             for k in served_MS_ids(i, cell_assignment)

@@ -14,8 +14,12 @@ function NuclearNormHeuristicLinearized(channel::SinglecarrierChannel, network::
     sigma2s = get_receiver_noise_powers(network)
     ds = get_no_streams(network); max_d = maximum(ds)
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
+
     aux_params = get_aux_precoding_params(network)
-    check_aux_precoding_params!(aux_params, NuclearNormHeuristicLinearizedState)
+    @defaultize_param! aux_params "NuclearNormHeuristicLinearized:bisection_matrix_cond" 1e10
+    @defaultize_param! aux_params "NuclearNormHeuristicLinearized:bisection_singular_matrix_mu_lower_bound" 1e-14
+    @defaultize_param! aux_params "NuclearNormHeuristicLinearized:bisection_max_iters" 1e2
+    @defaultize_param! aux_params "NuclearNormHeuristicLinearized:bisection_tolerance" 1e-3
 
     state = NuclearNormHeuristicLinearizedState(
         Array(Matrix{Complex128}, K),
@@ -66,13 +70,13 @@ function NuclearNormHeuristicLinearized(channel::SinglecarrierChannel, network::
     end
 
     results = PrecodingResults()
-    if aux_params["output_protocol"] == 1
+    if aux_params["output_protocol"] == :all_iterations
         results["objective"] = objective
         results["utilities"] = utilities
         results["logdet_rates"] = logdet_rates
         results["MMSE_rates"] = MMSE_rates
         results["allocated_power"] = allocated_power
-    elseif aux_params["output_protocol"] == 2
+    elseif aux_params["output_protocol"] == :final_iteration
         results["objective"] = objective[iters]
         results["utilities"] = utilities[:,:,iters]
         results["logdet_rates"] = logdet_rates[:,:,iters]
@@ -80,21 +84,6 @@ function NuclearNormHeuristicLinearized(channel::SinglecarrierChannel, network::
         results["allocated_power"] = allocated_power[:,:,iters]
     end
     return results
-end
-
-function check_aux_precoding_params!(aux_params, ::Type{NuclearNormHeuristicLinearizedState})
-    if !haskey(aux_params, "NuclearNormHeuristic:bisection_matrix_cond")
-        aux_params["NuclearNormHeuristic:bisection_matrix_cond"] = 1e10
-    end
-    if !haskey(aux_params, "NuclearNormHeuristic:bisection_singular_matrix_mu_lower_bound")
-        aux_params["NuclearNormHeuristic:bisection_singular_matrix_mu_lower_bound"] = 1e-14
-    end
-    if !haskey(aux_params, "NuclearNormHeuristic:bisection_max_iters")
-        aux_params["NuclearNormHeuristic:bisection_max_iters"] = 1e2
-    end
-    if !haskey(aux_params, "NuclearNormHeuristic:bisection_tolerance")
-        aux_params["NuclearNormHeuristic:bisection_tolerance"] = 1e-3
-    end
 end
 
 function update_MSs!(state::NuclearNormHeuristicLinearizedState, channel::SinglecarrierChannel,
@@ -205,9 +194,9 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     # mu lower bound
     mu_lower = 0.; k_idx = 1
     for k in served
-        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > aux_params["NuclearNormHeuristic:bisection_matrix_cond"]
+        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > aux_params["NuclearNormHeuristicLinearized:bisection_matrix_cond"]
             # Matrix not invertible, resort to non-zero default
-            mu_lower = aux_params["NuclearNormHeuristic:bisection_singular_matrix_mu_lower_bound"]
+            mu_lower = aux_params["NuclearNormHeuristicLinearized:bisection_singular_matrix_mu_lower_bound"]
             break
         end
         k_idx += 1
@@ -224,10 +213,10 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         end
 
         no_iters = 0
-        while no_iters < aux_params["NuclearNormHeuristic:bisection_max_iters"]
+        while no_iters < aux_params["NuclearNormHeuristicLinearized:bisection_max_iters"]
             conv_crit = (Ps[i] - f(mu_upper))/Ps[i]
 
-            if conv_crit < aux_params["NuclearNormHeuristic:bisection_tolerance"]
+            if conv_crit < aux_params["NuclearNormHeuristicLinearized:bisection_tolerance"]
                 break
             else
                 mu = (1/2)*(mu_lower + mu_upper)
@@ -244,7 +233,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
             no_iters += 1
         end
 
-        if no_iters == aux_params["NuclearNormHeuristic:bisection_max_iters"]
+        if no_iters == aux_params["NuclearNormHeuristicLinearized:bisection_max_iters"]
             println("Power bisection: reached max iterations.")
         end
 

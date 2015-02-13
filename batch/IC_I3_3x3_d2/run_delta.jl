@@ -18,7 +18,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 ##########################################################################
 # Interference channel
 simulation_params = [
-    "name" => "delta_$(start_time)",
+    "simulation_name" => "delta_$(start_time)",
     "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
     "P_dBm" => 30.,
     "d" => 2,
@@ -48,7 +48,7 @@ network =
         no_streams=simulation_params["d"])
 raw_results = simulate(network, simulation_params)
 
-println("-- Saving $(simulation_params["name"]) results")
-save("$(simulation_params["name"]).jld",
+println("-- Saving $(simulation_params["simulation_name"]) results")
+save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)

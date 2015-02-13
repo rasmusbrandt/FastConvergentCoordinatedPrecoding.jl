@@ -26,44 +26,59 @@ parsed_args = parse_args(s)
 ##########################################################################
 # Plot parameters
 plot_params = [
-    "name_suffix" => "",
+    "plot_name" => "",
 
-    "figsize" => (8,4),
-    "xscale" => "log",
+    "objective" => :sumrate,
 
-    "objectives" => [
-        "sumrate" => (r -> sum(r, 5:6), [ "xlabel" => "delta", "ylabel" => "Sum rate [bits/s/Hz]" ]),
+    "figure" => [
+        :figsize => (8,5),
+        :dpi => 125,
     ],
 
-    "precoding_methods" => {
+    "axes" => [
+        :xlabel => "Transmit power [dBm]",
+        :ylabel => "Sum rate [bits/s/Hz]",
+        :xscale => "log",
+    ],
+
+    "legend" => [
+        :loc => "best",
+        :fontsize => 8,
+    ],
+
+    "precoding_methods" => [
         "LogDetHeuristic" => [
-            ("logdet_rates", [ "key" => "g-", "legend" => "LogDetHeuristic" ]),
+            ("logdet_rates", [ :color => "g", :linestyle => "-", :label => "LogDetHeuristic" ]),
         ],
 
-        "NuclearNormHeuristic" => [
-            ("logdet_rates", [ "key" => "y-", "legend" => "NuclearNormHeuristic" ]),
+        "NuclearNormHeuristicLinearized" => [
+            ("logdet_rates", [ :color => "y", :linestyle => "-", :label => "NuclearNormHeuristicLinearized" ]),
+        ],
+
+        "NuclearNormHeuristicMosek" => [
+            ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristicMosek" ]),
         ],
 
         "Shi2011_WMMSE" => [
-            ("logdet_rates", [ "key" => "b-", "legend" => "WMMSE" ]),
+            ("logdet_rates", [ :color => "b", :linestyle => "-", :label => "WMMSE" ]),
         ],
 
         "Gomadam2008_MaxSINR" => [
-            ("logdet_rates", [ "key" => "r-", "legend" => "MaxSINR" ]),
+            ("logdet_rates", [ :color => "r", :linestyle => "-", :label => "MaxSINR" ]),
         ],
 
-        "Eigenprecoding" => {
-            ("intercell_tdma_logdet_rates", [ "key" => "c-", "legend" => "TDMA" ]),
-            ("intracell_tdma_logdet_rates", [ "key" => "c-.", "legend" => "Intracell TDMA" ]),
-            ("uncoord_logdet_rates", [ "key" => "k-", "legend" => "Uncoordinated" ]),
-        },
-    },
+        "Eigenprecoding" => [
+            ("intercell_tdma_logdet_rates", [ :color => "c", :linestyle => "-", :label => "TDMA" ]),
+            ("intracell_tdma_logdet_rates", [ :color => "c", :linestyle => "-.",  :label => "Intracell TDMA" ]),
+            ("uncoord_logdet_rates", [ :color => "k", :linestyle => "-", :label => "Uncoord. transm." ]),
+        ],
+    ]
 ]
 
 ##########################################################################
 # Plot it
 for file_name in parsed_args["file_names"]
     data = load(file_name)
-    processed_results = process(data["raw_results"], data["simulation_params"], plot_params)
+    processed_results = postprocess(data["raw_results"], data["simulation_params"], plot_params)
     plot(processed_results, data["simulation_params"], plot_params)
 end

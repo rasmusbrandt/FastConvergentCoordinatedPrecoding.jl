@@ -8,7 +8,7 @@
 module InterferenceRankRegularizedWSR
 
 using CoordinatedPrecoding
-import Lumberjack, Convex, ECOS, SCS
+import Lumberjack, Convex, SCS
 
 export
     # precoding

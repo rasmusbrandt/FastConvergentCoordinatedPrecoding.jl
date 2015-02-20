@@ -5,7 +5,7 @@ immutable NuclearNormHeuristicMosekState
 end
 
 function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Network)
-    cell_assignment = get_cell_assignment(network)
+    assignment = get_assignment(network)
 
     K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
@@ -20,7 +20,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
     state = NuclearNormHeuristicMosekState(
         Array(Matrix{Complex128}, K),
         unity_MSE_weights(ds),
-        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, aux_params))
+        initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
     utilities = Array(Float64, K, max_d, aux_params["max_iters"])
     logdet_rates = Array(Float64, K, max_d, aux_params["max_iters"])
@@ -29,7 +29,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, sigma2s, cell_assignment, aux_params)
+        update_MSs!(state, channel, sigma2s, assignment, aux_params)
         iters += 1
 
         # Results after this iteration
@@ -52,7 +52,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
 
         # Begin next iteration, unless the loop will end
         if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, cell_assignment, aux_params)
+            update_BSs!(state, channel, Ps, assignment, aux_params)
         end
     end
     if iters == aux_params["max_iters"]
@@ -79,19 +79,19 @@ end
 
 function update_MSs!(state::NuclearNormHeuristicMosekState,
     channel::SinglecarrierChannel, sigma2s::Vector{Float64},
-    cell_assignment::CellAssignment, aux_params)
+    assignment::Assignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
     for i = 1:channel.I
-        for k = served_MS_ids(i, cell_assignment)
+        for k = served_MS_ids(i, assignment)
             # Received covariance and interference subspace basis
             Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
             J_ext = Array(Float64, 2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
             for j = 1:channel.I
                 Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
                 H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-                for l in served_MS_ids(j, cell_assignment)
+                for l in served_MS_ids(j, assignment)
                     #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
                     Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
 
@@ -141,7 +141,7 @@ end
 
 function update_BSs!(state::NuclearNormHeuristicMosekState,
     channel::SinglecarrierChannel, Ps::Vector{Float64},
-    cell_assignment::CellAssignment, aux_params)
+    assignment::Assignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
@@ -155,7 +155,7 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
         Gamma = Hermitian(complex(zeros(channel.Ms[i],channel.Ms[i])))
         
         for j = 1:channel.I
-            for l in served_MS_ids(j, cell_assignment)
+            for l in served_MS_ids(j, assignment)
                 Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.W[l]*state.U[l]')*channel.H[l,i])
             end
         end
@@ -165,7 +165,7 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
 
         # Precoders and weighted MMSE objective contribution for served users
         used_power = Convex.Constant(0)
-        for k in served_MS_ids(i, cell_assignment)
+        for k in served_MS_ids(i, assignment)
             # Desired channel
             G = channel.H[k,i]'*state.U[k]*state.W[k]
             Gr = real(G); Gi = imag(G)
@@ -181,14 +181,14 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
     # Interference subspace basis nuclear norm regularization
     if aux_params["NuclearNormHeuristicMosek:perform_regularization"]
         for i = 1:channel.I
-            for k = served_MS_ids(i, cell_assignment)
+            for k = served_MS_ids(i, assignment)
                 J_ext = Convex.Variable(2*channel.Ms[i], sum(ds) - ds[k]); j_offset = 0
 
                 for j = 1:channel.I
                     Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
                     H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
 
-                    for l in served_MS_ids_except_me(k, j, cell_assignment)
+                    for l in served_MS_ids_except_me(k, j, assignment)
                         push!(constraints, J_ext[:, (1 + j_offset):(j_offset + ds[l])] == H_ext*Vs[j])
                         j_offset += ds[l]
                     end
@@ -208,7 +208,7 @@ function update_BSs!(state::NuclearNormHeuristicMosekState,
     Convex.solve!(problem, aux_params["NuclearNormHeuristicMosek:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I
-            for k in served_MS_ids(i, cell_assignment)
+            for k in served_MS_ids(i, assignment)
                 state.V[k] = Vs[k].value[1:channel.Ms[i],:] + im*Vs[k].value[channel.Ms[i]+1:end,:]
             end
         end

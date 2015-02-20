@@ -7,7 +7,7 @@ immutable LogDetHeuristicState
 end
 
 function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
-    cell_assignment = get_cell_assignment(network)
+    assignment = get_assignment(network)
 
     K = get_no_MSs(network)
     Ps = get_transmit_powers(network)
@@ -26,7 +26,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
         unity_MSE_weights(ds),
         unity_MSE_weights(ds),
         unity_MSE_weights(ds),
-        initial_precoders(channel, Ps, sigma2s, ds, cell_assignment, aux_params))
+        initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
     utilities = Array(Float64, K, max_d, aux_params["max_iters"])
     logdet_rates = Array(Float64, K, max_d, aux_params["max_iters"])
@@ -35,7 +35,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, sigma2s, cell_assignment, aux_params)
+        update_MSs!(state, channel, sigma2s, assignment, aux_params)
         iters += 1
 
         # Results after this iteration
@@ -59,7 +59,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
 
         # Begin next iteration, unless the loop will end
         if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, alphas, cell_assignment, aux_params)
+            update_BSs!(state, channel, Ps, alphas, assignment, aux_params)
         end
     end
     if iters == aux_params["max_iters"]
@@ -87,17 +87,17 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
 end
 
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
-    sigma2s::Vector{Float64}, cell_assignment::CellAssignment,
+    sigma2s::Vector{Float64}, assignment::Assignment,
     aux_params::AuxPrecodingParams)
 
     rho = aux_params["rho"]; delta = aux_params["delta"]
     ds = [ size(state.W[k], 1) for k = 1:channel.K ]
 
     for i = 1:channel.I
-        for k in served_MS_ids(i, cell_assignment)
+        for k in served_MS_ids(i, assignment)
             # Received interference covariance
             Psi = Hermitian(complex(zeros(channel.Ns[k], channel.Ns[k])))
-            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
+            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, assignment)
                 #Psi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
                 Base.LinAlg.BLAS.herk!(Psi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Psi.S)
             end; end
@@ -129,20 +129,20 @@ end
 
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 
     Ps::Vector{Float64}, alphas::Vector{Float64},
-    cell_assignment::CellAssignment, aux_params::AuxPrecodingParams)
+    assignment::Assignment, aux_params::AuxPrecodingParams)
 
     for i = 1:channel.I
-        served = served_MS_ids(i, cell_assignment); Kc = length(served)
+        served = served_MS_ids(i, assignment); Kc = length(served)
 
         Gamma = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
-        for j = 1:channel.I; for l in served_MS_ids(j, cell_assignment)
+        for j = 1:channel.I; for l in served_MS_ids(j, assignment)
             Gamma += Hermitian(alphas[l]*channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
         end; end
 
         Lambdas = Array(Hermitian{Complex128}, Kc); k_idx = 1
         for k in served
             Lambdas[k_idx] = Hermitian(complex(zeros(channel.Ms[i], channel.Ms[i])))
-            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, cell_assignment)
+            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, assignment)
                 Lambdas[k_idx] += Hermitian(alphas[l]*channel.H[l,i]'*(state.U[l]*state.Z[l]*state.U[l]')*channel.H[l,i])
             end; end
             k_idx += 1
@@ -150,7 +150,7 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
         # Find optimal Lagrange multiplier
         mu_star, eigens =
-            optimal_mu(i, Gamma, Lambdas, state, channel, Ps, alphas, cell_assignment, aux_params)
+            optimal_mu(i, Gamma, Lambdas, state, channel, Ps, alphas, assignment, aux_params)
 
         # Precoders (reuse EVDs)
         k_idx = 1
@@ -164,10 +164,10 @@ end
 function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     Lambdas::Vector{Hermitian{Complex128}}, state::LogDetHeuristicState,
     channel::SinglecarrierChannel, Ps::Vector{Float64}, alphas::Vector{Float64},
-    cell_assignment::CellAssignment, aux_params::AuxPrecodingParams)
+    assignment::Assignment, aux_params::AuxPrecodingParams)
 
     rho = aux_params["rho"]
-    served = served_MS_ids(i, cell_assignment); Kc = length(served)
+    served = served_MS_ids(i, assignment); Kc = length(served)
 
     # Build bisector function
     eigens = Array(Factorization{Complex128}, Kc)

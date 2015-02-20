@@ -45,7 +45,7 @@ plot_params = [
         :fontsize => 8,
     ],
 
-    "precoding_methods" => [
+    "methods" => [
         "LogDetHeuristic" => [
             ("logdet_rates", [ :color => "g", :linestyle => "-", :label => "LogDetHeuristic" ]),
             ("utilities", [ :color => "g", :linestyle => "--",  :label => "LogDetHeuristic (utilities)" ]),

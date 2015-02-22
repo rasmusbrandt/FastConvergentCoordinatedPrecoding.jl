@@ -185,7 +185,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         begin
             a = 0.; k_idx = 1
             for k in served
-                a += sum(bis[:,k_idx]./((eigens[k_idx].values .+ mu).*(eigens[k_idx].values .+ mu)))
+                a += sum(bis[:,k_idx]./((abs(eigens[k_idx].values) .+ mu).*(eigens[k_idx].values .+ mu)))
                 k_idx += 1
             end
             return a
@@ -194,7 +194,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     # mu lower bound
     mu_lower = 0.; k_idx = 1
     for k in served
-        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > aux_params["NuclearNormHeuristicLinearized:bisection_matrix_cond"]
+        if maximum(abs(eigens[k_idx].values))/minimum(abs(eigens[k_idx].values)) > aux_params["NuclearNormHeuristicLinearized:bisection_matrix_cond"]
             # Matrix not invertible, resort to non-zero default
             mu_lower = aux_params["NuclearNormHeuristicLinearized:bisection_singular_matrix_mu_lower_bound"]
             break
@@ -207,7 +207,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         return mu_lower, eigens
     else
         # mu upper bound
-        mu_upper = sqrt((1/Ps[i])*maximum(bis)*channel.Ms[i]*sum(alphas.^2)) - minimum([minimum(eigens[k_idx].values) for k_idx = 1:Kc])
+        mu_upper = sqrt((1/Ps[i])*maximum(bis)*channel.Ms[i]*sum(alphas.^2)) - minimum([minimum(abs(eigens[k_idx].values)) for k_idx = 1:Kc])
         if f(mu_upper) > Ps[i]
             error("Power bisection: infeasible mu upper bound.")
         end

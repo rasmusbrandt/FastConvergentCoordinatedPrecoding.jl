@@ -155,7 +155,7 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
         # Precoders (reuse EVDs)
         k_idx = 1
         for k in served
-            state.V[k] = alphas[k]*eigens[k_idx].vectors*Diagonal(1./(eigens[k_idx].values .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
+            state.V[k] = alphas[k]*eigens[k_idx].vectors*Diagonal(1./(abs(eigens[k_idx].values) .+ mu_star))*eigens[k_idx].vectors'*channel.H[k,i]'*state.U[k]*state.Y[k]
             k_idx += 1
         end
     end
@@ -194,7 +194,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     # mu lower bound
     mu_lower = 0.; k_idx = 1
     for k in served
-        if abs(maximum(eigens[k_idx].values))/abs(minimum(eigens[k_idx].values)) > aux_params["LogDetHeuristic:bisection_matrix_cond"]
+        if maximum(abs(eigens[k_idx].values))/minimum(abs(eigens[k_idx].values)) > aux_params["LogDetHeuristic:bisection_matrix_cond"]
             # Matrix not invertible, resort to non-zero default
             mu_lower = aux_params["LogDetHeuristic:bisection_singular_matrix_mu_lower_bound"]
             break
@@ -207,7 +207,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
         return mu_lower, eigens
     else
         # mu upper bound
-        mu_upper = sqrt((1/Ps[i])*maximum(bis)*channel.Ms[i]*sum(alphas.^2)) - minimum([minimum(eigens[k_idx].values) for k_idx = 1:Kc])
+        mu_upper = sqrt((1/Ps[i])*maximum(bis)*channel.Ms[i]*sum(alphas.^2)) - minimum([minimum(abs(eigens[k_idx].values)) for k_idx = 1:Kc])
         if f(mu_upper) > Ps[i]
             error("Power bisection: infeasible mu upper bound.")
         end

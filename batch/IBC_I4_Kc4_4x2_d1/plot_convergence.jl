@@ -36,7 +36,7 @@ plot_params = [
     ],
 
     "axes" => [
-        :xlabel => "Transmit power [dBm]",
+        :xlabel => "Iterations",
         :ylabel => "Sum rate [bits/s/Hz]",
     ],
 

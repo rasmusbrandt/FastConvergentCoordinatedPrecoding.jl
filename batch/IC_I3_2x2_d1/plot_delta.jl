@@ -8,6 +8,7 @@
 
 include("../../src/InterferenceRankRegularizedWSR.jl")
 using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+using LaTeXStrings
 
 ##########################################################################
 # Load data
@@ -36,7 +37,7 @@ plot_params = [
     ],
 
     "axes" => [
-        :xlabel => "Transmit power [dBm]",
+        :xlabel => L"\delta",
         :ylabel => "Sum rate [bits/s/Hz]",
         :xscale => "log",
     ],

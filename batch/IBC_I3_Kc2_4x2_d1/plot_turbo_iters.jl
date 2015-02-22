@@ -36,7 +36,7 @@ plot_params = [
     ],
 
     "axes" => [
-        :xlabel => "Transmit power [dBm]",
+        :xlabel => "Turbo iterations",
         :ylabel => "Sum rate [bits/s/Hz]",
         :xscale => "log",
     ],

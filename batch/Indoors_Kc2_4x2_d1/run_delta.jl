@@ -1,9 +1,9 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_rho.jl
+# run_delta.jl
 #
-# Performance vs. rho
+# Performance vs. delta
 ##########################################################################
 
 include("../../src/InterferenceRankRegularizedWSR.jl")
@@ -18,8 +18,8 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 ##########################################################################
 # Interference channel
 simulation_params = [
-    "simulation_name" => "rho_$(start_time)",
-    "I" => 2, "Kc" => 2, "N" => 2, "M" => 4,
+    "simulation_name" => "delta_$(start_time)",
+    "I" => 4, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => -9.8,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
@@ -37,12 +37,12 @@ simulation_params = [
         "max_iters" => 3,
         "turbo_iters" => 10,
 
-        "delta" => 1.,
+        "rho" => 3e-2,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-4, 2, 100)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "delta"), logspace(-1, 3, 100)),
 ]
 network =
-    setup_itu_r_inh_network(simulation_params["I"],
+    setup_indoors_network(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])

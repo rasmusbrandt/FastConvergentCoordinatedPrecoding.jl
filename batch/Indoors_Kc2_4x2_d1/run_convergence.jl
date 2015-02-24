@@ -1,9 +1,9 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_turbo_iters.jl
+# run_convergence.jl
 #
-# Performance vs. turbo_iters
+# Convergence as a function of number of outer and turbo iterations.
 ##########################################################################
 
 include("../../src/InterferenceRankRegularizedWSR.jl")
@@ -18,10 +18,10 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 ##########################################################################
 # Interference channel
 simulation_params = [
-    "simulation_name" => "turbo_iters_$(start_time)",
-    "I" => 2, "Kc" => 2, "N" => 2, "M" => 4,
+    "simulation_name" => "convergence_$(start_time)",
+    "I" => 4, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => -9.8,
-    "d" => 2,
+    "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
@@ -34,21 +34,21 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
+        "max_iters" => 20,
 
-        "rho" => 3e-2,
+        "rho" => 1e-2,
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), 1:5),
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "max_iters"), [2, 3, 4]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =
-    setup_itu_r_inh_network(simulation_params["I"],
+    setup_indoors_network(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
-raw_results = simulate(network, simulation_params)
+raw_results = simulate_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",

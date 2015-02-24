@@ -19,7 +19,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Interference channel
 simulation_params = [
     "simulation_name" => "SNR_$(start_time)",
-    "I" => 2, "Kc" => 2, "N" => 2, "M" => 4,
+    "I" => 4, "Kc" => 2, "N" => 2, "M" => 4,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
@@ -33,18 +33,18 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 3,
+        "max_iters" => 5,
 
         "rho" => 3e-2,
         "delta" => 1.,
     ],
-    "independent_variable" => (set_transmit_powers_dBm!, -20:3:0),
+    "independent_variable" => (set_transmit_powers_dBm!, -40:3:0),
     "aux_independent_variables" => [
         ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [2, 3, 4]),
     ]
 ]
 network =
-    setup_itu_r_inh_network(simulation_params["I"],
+    setup_indoors_network(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         no_streams=simulation_params["d"])
 raw_results = simulate(network, simulation_params)

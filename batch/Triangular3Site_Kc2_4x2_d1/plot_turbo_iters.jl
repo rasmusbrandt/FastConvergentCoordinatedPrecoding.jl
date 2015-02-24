@@ -38,7 +38,6 @@ plot_params = [
     "axes" => [
         :xlabel => "Transmit power [dBm]",
         :ylabel => "Sum rate [bits/s/Hz]",
-        :xscale => "log",
     ],
 
     "legend" => [

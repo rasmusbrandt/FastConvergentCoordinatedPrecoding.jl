@@ -1,11 +1,11 @@
 ##########################################################################
-# InterferenceRankRegularizedWSR
+# DoFRegularizedWSR
 #
-# Evaluation environment for the InterferenceRankRegularizedWSR project
-# https://gitr.sys.kth.se/rabr5411/InterferenceRankRegularizedWSR.jl
+# Evaluation environment for the DoFRegularizedWSR project
+# https://gitr.sys.kth.se/rabr5411/DoFRegularizedWSR.jl
 ##########################################################################
 
-module InterferenceRankRegularizedWSR
+module DoFRegularizedWSR
 
 using CoordinatedPrecoding
 import Lumberjack, Convex, SCS

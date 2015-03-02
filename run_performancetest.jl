@@ -6,8 +6,8 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+include("src/DoFRegularizedWSR.jl")
+using DoFRegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # General settings

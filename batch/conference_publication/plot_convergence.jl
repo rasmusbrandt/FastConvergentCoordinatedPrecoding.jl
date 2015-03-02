@@ -6,8 +6,8 @@
 # Plots convergence curves.
 ##########################################################################
 
-require("../../src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+require("../../src/DoFRegularizedWSR.jl")
+using DoFRegularizedWSR, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################

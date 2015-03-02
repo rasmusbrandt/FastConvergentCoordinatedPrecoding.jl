@@ -6,8 +6,8 @@
 # Performance vs. rho
 ##########################################################################
 
-include("../../src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+include("../../src/DoFRegularizedWSR.jl")
+using DoFRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

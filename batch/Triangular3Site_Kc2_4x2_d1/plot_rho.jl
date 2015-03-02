@@ -6,8 +6,8 @@
 # Plots rho curves.
 ##########################################################################
 
-include("../../src/InterferenceRankRegularizedWSR.jl")
-using InterferenceRankRegularizedWSR, CoordinatedPrecoding
+include("../../src/DoFRegularizedWSR.jl")
+using DoFRegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # Load data

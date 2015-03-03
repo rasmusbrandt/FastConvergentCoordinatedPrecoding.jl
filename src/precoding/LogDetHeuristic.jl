@@ -87,8 +87,7 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
 end
 
 function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
-    sigma2s::Vector{Float64}, assignment::Assignment,
-    aux_params::AuxPrecodingParams)
+    sigma2s, assignment, aux_params)
 
     rho = aux_params["rho"]; delta = aux_params["delta"]
     ds = [ size(state.W[k], 1) for k = 1:channel.K ]
@@ -128,8 +127,7 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 end
 
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 
-    Ps::Vector{Float64}, alphas::Vector{Float64},
-    assignment::Assignment, aux_params::AuxPrecodingParams)
+    Ps, alphas, assignment, aux_params)
 
     for i = 1:channel.I
         served = served_MS_ids(i, assignment); Kc = length(served)
@@ -161,10 +159,8 @@ function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
     end
 end
 
-function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
-    Lambdas::Vector{Hermitian{Complex128}}, state::LogDetHeuristicState,
-    channel::SinglecarrierChannel, Ps::Vector{Float64}, alphas::Vector{Float64},
-    assignment::Assignment, aux_params::AuxPrecodingParams)
+function optimal_mu(i, Gamma, Lambdas, state::LogDetHeuristicState,
+    channel::SinglecarrierChannel, Ps, alphas, assignment, aux_params)
 
     rho = aux_params["rho"]
     served = served_MS_ids(i, assignment); Kc = length(served)
@@ -242,8 +238,7 @@ function optimal_mu(i::Int, Gamma::Hermitian{Complex128},
     end
 end
 
-function calculate_utilities(state::LogDetHeuristicState, aux_params::AuxPrecodingParams)
-
+function calculate_utilities(state::LogDetHeuristicState, aux_params)
     rho = aux_params["rho"]
 
     K = length(state.W)

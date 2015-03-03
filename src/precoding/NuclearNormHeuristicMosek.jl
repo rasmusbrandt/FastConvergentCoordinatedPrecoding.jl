@@ -78,8 +78,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
 end
 
 function update_MSs!(state::NuclearNormHeuristicMosekState,
-    channel::SinglecarrierChannel, sigma2s::Vector{Float64},
-    assignment::Assignment, aux_params)
+    channel::SinglecarrierChannel, sigma2s, assignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
@@ -140,8 +139,7 @@ function update_MSs!(state::NuclearNormHeuristicMosekState,
 end
 
 function update_BSs!(state::NuclearNormHeuristicMosekState,
-    channel::SinglecarrierChannel, Ps::Vector{Float64},
-    assignment::Assignment, aux_params)
+    channel::SinglecarrierChannel, Ps, assignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 

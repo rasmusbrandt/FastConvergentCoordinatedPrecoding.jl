@@ -23,8 +23,8 @@ simulation_params = {
     "Ntest" => 100,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristicLinearized,
-        # NuclearNormHeuristicMosek,
+        NuclearNormHeuristicLinearized,
+        NuclearNormHeuristicMosek,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
@@ -33,17 +33,12 @@ simulation_params = {
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
+        "max_iters" => 10,
         "turbo_iters" => 10,
 
-        "rho" => 1e-2,
+        "rho" => 1e-1,
         "delta" => 1.,
     ],
-}
-precoding_settings = {
-    "stop_crit" => 20,
-
-    "rho" => 1/30,
-    "delta" => 1.,
 }
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],

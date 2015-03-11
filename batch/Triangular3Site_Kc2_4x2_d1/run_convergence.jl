@@ -19,7 +19,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Interference channel
 simulation_params = [
     "simulation_name" => "convergence_$(start_time)",
-    "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
+    "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 18.2,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
@@ -44,7 +44,7 @@ simulation_params = [
     ]
 ]
 network =
-    setup_triangular3site_network(simulation_params["I"],
+    setup_triangular3site_network(
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])

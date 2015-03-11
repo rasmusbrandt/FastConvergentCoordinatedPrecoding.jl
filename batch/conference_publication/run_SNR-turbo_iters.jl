@@ -33,7 +33,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 3,
 
-        "rho" => 1e-1,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, -10:30),

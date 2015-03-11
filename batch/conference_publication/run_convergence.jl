@@ -34,7 +34,7 @@ simulation_params = [
         "max_iters" => 9,
         "turbo_iters" => 2,
 
-        "rho" => 1e-1,
+        "rho" => 10.,
         "delta" => 1.,
     ],
 ]

@@ -36,7 +36,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
-        "rho" => 1e-2,
+        "rho" => 1e2,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, 0:3:30),
@@ -76,7 +76,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
-        "rho" => 1/30,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, 0:3:30),
@@ -116,7 +116,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
-        "rho" => 1/30,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, 0:3:30),

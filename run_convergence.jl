@@ -38,7 +38,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1e-2,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -80,7 +80,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1/100.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -122,7 +122,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 1/100.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [

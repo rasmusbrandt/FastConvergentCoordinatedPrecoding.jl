@@ -112,7 +112,7 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
 
             for turbo_iters = 1:aux_params["turbo_iters"]
                 # Receive filter (N.B., not MMSE filter!)
-                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
+                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + rho*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
 
                 # MSE
                 E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
@@ -170,7 +170,7 @@ function optimal_mu(i, Gamma, Lambdas, state::LogDetHeuristicState,
     bis = Array(Float64, channel.Ms[i], Kc)
     k_idx = 1
     for k in served
-        eigens[k_idx] = eigfact(Gamma + (1/rho)*Lambdas[k_idx])
+        eigens[k_idx] = eigfact(Gamma + rho*Lambdas[k_idx])
 
         effective_channel = alphas[k]*channel.H[k,i]'*state.U[k]*state.Y[k]
         bis[:,k_idx] = abs(diag(eigens[k_idx].vectors'*(effective_channel*effective_channel')*eigens[k_idx].vectors))
@@ -247,7 +247,7 @@ function calculate_utilities(state::LogDetHeuristicState, aux_params)
     utilities = Array(Float64, K, max_d)
 
     for k = 1:K
-        user_util = abs(log2(eigvals(state.Y[k]))) + (1/rho)*abs(log2(eigvals(state.Z[k])))
+        user_util = abs(log2(eigvals(state.Y[k]))) + rho*abs(log2(eigvals(state.Z[k])))
 
         if ds[k] < max_d
             utilities[k,:] = cat(1, user_util, zeros(Float64, max_d - ds[k]))

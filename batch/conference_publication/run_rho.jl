@@ -37,7 +37,7 @@ simulation_params = [
 
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-4, 2, 100)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-2, 4, 100)),
 ]
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],

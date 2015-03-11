@@ -32,8 +32,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
@@ -73,8 +72,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 
@@ -114,8 +112,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 10,
 

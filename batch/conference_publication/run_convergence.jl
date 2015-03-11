@@ -29,7 +29,7 @@ simulation_params = [
         Gomadam2008_MaxSINR,
     ],
     "aux_precoding_params" => [
-        "initial_precoders" => "eigendirection",
+        "initial_receivers" => "eigendirection", "initial_precoders" => "dft",
         "stop_crit" => 0.,
         "max_iters" => 9,
         "turbo_iters" => 2,

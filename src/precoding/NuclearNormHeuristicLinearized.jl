@@ -34,6 +34,7 @@ function NuclearNormHeuristicLinearized(channel::SinglecarrierChannel, network::
     allocated_power = Array(Float64, K, max_d, aux_params["max_iters"])
 
     iters = 0; conv_crit = Inf
+    set_initial_MMSE_receivers!(state, channel, sigma2s, assignment)
     while iters < aux_params["max_iters"]
         update_MSs!(state, channel, sigma2s, assignment, aux_params)
         iters += 1
@@ -84,6 +85,23 @@ function NuclearNormHeuristicLinearized(channel::SinglecarrierChannel, network::
         results["allocated_power"] = allocated_power[:,:,iters]
     end
     return results
+end
+
+function set_initial_MMSE_receivers!(state::NuclearNormHeuristicLinearizedState,
+    channel::SinglecarrierChannel, sigma2s, assignment)
+
+    ds = [ size(state.W[k], 1) for k = 1:channel.K ]
+
+    for i = 1:channel.I; for k in served_MS_ids(i, assignment)
+        Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
+        for j = 1:channel.I; for l in served_MS_ids(j, assignment)
+            #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
+            Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+        end; end
+
+        # MMSE receiver
+        state.U[k] = Phi\(channel.H[k,i]*state.V[k])
+    end; end
 end
 
 function update_MSs!(state::NuclearNormHeuristicLinearizedState,

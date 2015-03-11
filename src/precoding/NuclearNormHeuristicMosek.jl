@@ -19,7 +19,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
 
     state = NuclearNormHeuristicMosekState(
         Array(Matrix{Complex128}, K),
-        unity_MSE_weights(ds),
+        initial_MSE_weights(channel, Ps, sigma2s, ds, assignment, aux_params),
         initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
     utilities = Array(Float64, K, max_d, aux_params["max_iters"])

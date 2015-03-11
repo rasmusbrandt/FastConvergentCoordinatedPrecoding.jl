@@ -22,10 +22,10 @@ function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
     @defaultize_param! aux_params "LogDetHeuristic:bisection_tolerance" 1e-3
 
     state = LogDetHeuristicState(
-        Array(Matrix{Complex128}, K),
-        unity_MSE_weights(ds),
-        unity_MSE_weights(ds),
-        unity_MSE_weights(ds),
+        initial_receivers(channel, Ps, sigma2s, ds, assignment, aux_params),
+        initial_MSE_weights(channel, Ps, sigma2s, ds, assignment, aux_params),
+        Array(Hermitian{Complex128}, K),
+        Array(Hermitian{Complex128}, K),
         initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
     utilities = Array(Float64, K, max_d, aux_params["max_iters"])
@@ -111,9 +111,6 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
             state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
 
             for turbo_iters = 1:aux_params["turbo_iters"]
-                # Receive filter (N.B., not MMSE filter!)
-                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
-
                 # MSE
                 E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
                 state.Y[k] = Hermitian(inv(E))
@@ -121,6 +118,9 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
                 # Leakage
                 F = state.U[k]'*Psi*state.U[k]
                 state.Z[k] = Hermitian(inv(delta*eye(ds[k]) + F))
+
+                # Receive filter (N.B., not MMSE filter!)
+                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + (1/rho)*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
             end
         end
     end

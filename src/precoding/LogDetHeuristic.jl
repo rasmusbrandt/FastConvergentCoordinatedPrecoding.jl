@@ -119,8 +119,8 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
                 state.Y[k] = Hermitian(inv(E))
 
                 # Leakage
-                F = state.U[k]'*Psi*state.U[k]
-                state.Z[k] = Hermitian(inv(delta*eye(ds[k]) + F))
+                F = delta*eye(ds[k]) + state.U[k]'*Psi*state.U[k]
+                state.Z[k] = Hermitian(inv(F))
             end
         end
     end

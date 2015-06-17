@@ -6,8 +6,8 @@
 # Performance vs. SNR and turbo_iters
 ##########################################################################
 
-require("../../src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+require("../../src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

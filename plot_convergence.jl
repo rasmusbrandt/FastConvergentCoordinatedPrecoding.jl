@@ -6,8 +6,8 @@
 # Plots convergence curves.
 ##########################################################################
 
-include("src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+include("src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # Load data

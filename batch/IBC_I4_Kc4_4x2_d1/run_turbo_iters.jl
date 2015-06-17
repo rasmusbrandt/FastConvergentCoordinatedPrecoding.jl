@@ -6,8 +6,8 @@
 # Performance vs. turbo_iters
 ##########################################################################
 
-include("../../src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+include("../../src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

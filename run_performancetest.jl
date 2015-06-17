@@ -6,8 +6,8 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+include("src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 
 ##########################################################################
 # General settings

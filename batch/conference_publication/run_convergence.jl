@@ -6,8 +6,8 @@
 # Convergence as a function of number of outer and turbo iterations.
 ##########################################################################
 
-require("../../src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+require("../../src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 using HDF5, JLD
 
 ##########################################################################

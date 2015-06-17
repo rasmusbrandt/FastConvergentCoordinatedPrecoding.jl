@@ -6,8 +6,8 @@
 # Plots rho curves.
 ##########################################################################
 
-require("../../src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+require("../../src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################

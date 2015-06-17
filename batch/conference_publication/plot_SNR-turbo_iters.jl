@@ -6,8 +6,8 @@
 # Plots SNR curves with varying number of turbo_iters.
 ##########################################################################
 
-require("../../src/DoFRegularizedWSR.jl")
-using DoFRegularizedWSR, CoordinatedPrecoding
+require("../../src/MGRegularizedWSR.jl")
+using MGRegularizedWSR, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################

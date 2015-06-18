@@ -15,7 +15,7 @@ function NuclearNormHeuristicMosek(channel::SinglecarrierChannel, network::Netwo
 
     aux_params = get_aux_precoding_params(network)
     @defaultize_param! aux_params "NuclearNormHeuristicMosek:perform_regularization" true
-    @defaultize_param! aux_params "NuclearNormHeuristicMosek:solver" SCS.SCSSolver(verbose=0)
+    @defaultize_param! aux_params "NuclearNormHeuristicMosek:solver" Mosek.MosekSolver(LOG=0)
 
     state = NuclearNormHeuristicMosekState(
         Array(Matrix{Complex128}, K),

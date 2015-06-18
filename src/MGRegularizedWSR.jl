@@ -8,7 +8,7 @@
 module MGRegularizedWSR
 
 using CoordinatedPrecoding
-import Lumberjack, Convex, SCS
+import Lumberjack, Convex, Mosek
 
 export
     # precoding

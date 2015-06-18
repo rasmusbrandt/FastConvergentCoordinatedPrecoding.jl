@@ -12,11 +12,10 @@ import Lumberjack, Convex, Mosek
 
 export
     # precoding
-    LogDetHeuristic, NuclearNormHeuristicLinearized, NuclearNormHeuristicMosek
+    LogDetHeuristic, NuclearNormHeuristic
 
 include("precoding/LogDetHeuristic.jl")
-include("precoding/NuclearNormHeuristicLinearized.jl")
-include("precoding/NuclearNormHeuristicMosek.jl")
+include("precoding/NuclearNormHeuristic.jl")
 
 ##########################################################################
 # Logging defaults

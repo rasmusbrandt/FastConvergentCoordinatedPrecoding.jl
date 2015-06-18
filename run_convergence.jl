@@ -25,8 +25,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristicLinearized,
-        # NuclearNormHeuristicMosek,
+        NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
@@ -67,8 +66,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristicLinearized,
-        # NuclearNormHeuristicMosek,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
@@ -109,8 +107,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristicLinearized,
-        # NuclearNormHeuristicMosek,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,

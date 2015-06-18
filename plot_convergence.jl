@@ -51,12 +51,8 @@ plot_params = [
             ("utilities", [ :color => "g", :linestyle => "--",  :label => "LogDetHeuristic (utilities)" ]),
         ],
 
-        "NuclearNormHeuristicLinearized" => [
-            ("logdet_rates", [ :color => "y", :linestyle => "-", :label => "NuclearNormHeuristicLinearized" ]),
-        ],
-
-        "NuclearNormHeuristicMosek" => [
-            ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristicMosek" ]),
+        "NuclearNormHeuristic" => [
+            ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
         ],
 
         "Shi2011_WMMSE" => [

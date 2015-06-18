@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_performancetest.jl
+# timing.jl
 #
 # Compares runtimes of different methods.
 ##########################################################################
@@ -47,4 +47,4 @@ network =
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
 
-simulate_performance(network, simulation_params)
+timing(network, simulation_params)

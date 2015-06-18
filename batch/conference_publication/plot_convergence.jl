@@ -34,7 +34,7 @@ postprocess_params = [
         ],
     ],
 ]
-results, results_mean, results_var = postprocess_convergence(data["raw_results"], data["simulation_params"], postprocess_params)
+results, results_mean, results_var = postprocess_precoding_convergence(data["raw_results"], data["simulation_params"], postprocess_params)
 
 ##########################################################################
 # Build figure (see http://matplotlib.org/users/customizing.html for options)

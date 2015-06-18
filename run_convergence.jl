@@ -25,7 +25,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
@@ -37,7 +37,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -78,7 +78,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
@@ -119,7 +119,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 20,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [

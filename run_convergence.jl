@@ -32,16 +32,15 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 20,
+        "max_iters" => 100,
 
         "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =
@@ -73,8 +72,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 20,
 
@@ -82,7 +80,7 @@ simulation_params = [
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =
@@ -114,8 +112,7 @@ simulation_params = [
         Eigenprecoding
     ],
     "aux_precoding_params" => [
-        "initial_receivers" => "eigendirection",
-        "initial_precoders" => "dft",
+        "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 20,
 
@@ -123,7 +120,7 @@ simulation_params = [
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10, 100]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =

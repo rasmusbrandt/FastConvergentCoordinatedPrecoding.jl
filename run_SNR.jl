@@ -66,7 +66,7 @@ simulation_params = [
         LogDetHeuristic,
         NuclearNormHeuristic,
 
-        Papailiopoulos2011_RCRM,
+        # Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -106,7 +106,7 @@ simulation_params = [
         LogDetHeuristic,
         NuclearNormHeuristic,
 
-        Papailiopoulos2011_RCRM,
+        # Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding

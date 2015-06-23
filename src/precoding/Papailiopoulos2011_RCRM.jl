@@ -15,7 +15,7 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
 
     aux_params = get_aux_precoding_params(network)
-    @defaultize_param! aux_params "Papailiopoulos2011_RCRM:solver" Mosek.MosekSolver(LOG=0)
+    @defaultize_param! aux_params "Papailiopoulos2011_RCRM:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0)
     @defaultize_param! aux_params "Papailiopoulos2011_RCRM:epsilon" 1e-1
 
     state = Papailiopoulos2011_RCRMState(
@@ -24,38 +24,45 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
         initial_precoders(channel, ones(I), ones(K), ds, assignment, aux_params),
         initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
-    utilities = Array(Float64, K, max_d, aux_params["max_iters"])
-    logdet_rates = Array(Float64, K, max_d, aux_params["max_iters"])
-    MMSE_rates = Array(Float64, K, max_d, aux_params["max_iters"])
-    allocated_power = Array(Float64, K, max_d, aux_params["max_iters"])
+    utilities = zeros(Float64, K, max_d, aux_params["max_iters"])
+    logdet_rates = zeros(Float64, K, max_d, aux_params["max_iters"])
+    MMSE_rates = zeros(Float64, K, max_d, aux_params["max_iters"])
+    allocated_power = zeros(Float64, K, max_d, aux_params["max_iters"])
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, ds, assignment, aux_params)
-        orthogonalize!(state, channel, Ps, ds, sigma2s, assignment, aux_params)
-        iters += 1
+        # Mosek fails hard when it doesn't find a solution, so we just wrap
+        # the whole algorithm in this try/catch block.
+        try
+            update_MSs!(state, channel, ds, assignment, aux_params)
+            orthogonalize!(state, channel, Ps, ds, sigma2s, assignment, aux_params)
+            iters += 1
 
-        # Results after this iteration
-        logdet_rates[:,:,iters] = calculate_logdet_rates(state)
-        push!(objective, sum(alphas_diagonal*logdet_rates[:,:,iters]))
-        MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
-        allocated_power[:,:,iters] = calculate_allocated_power(state)
+            # Results after this iteration
+            logdet_rates[:,:,iters] = calculate_logdet_rates(state)
+            push!(objective, sum(alphas_diagonal*logdet_rates[:,:,iters]))
+            MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
+            allocated_power[:,:,iters] = calculate_allocated_power(state)
 
-        # Check convergence
-        if iters >= 2
-            conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
-            if conv_crit < aux_params["stop_crit"]
-                Lumberjack.debug("Papailiopoulos2011_RCRM converged.",
-                    { :no_iters => iters, :final_objective => objective[end],
-                      :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
-                      :max_iters => aux_params["max_iters"] })
-                break
+            # Check convergence
+            if iters >= 2
+                conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
+                if conv_crit < aux_params["stop_crit"]
+                    Lumberjack.debug("Papailiopoulos2011_RCRM converged.",
+                        { :no_iters => iters, :final_objective => objective[end],
+                          :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
+                          :max_iters => aux_params["max_iters"] })
+                    break
+                end
             end
-        end
 
-        # Begin next iteration, unless the loop will end
-        if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, ds, assignment, aux_params)
+            # Begin next iteration, unless the loop will end
+            if iters < aux_params["max_iters"]
+                update_BSs!(state, channel, Ps, ds, assignment, aux_params)
+            end
+        catch e
+            Lumberjack.warn("Papailiopoulos2011_RCRM bailing due to: $e.")
+            break
         end
     end
     if iters == aux_params["max_iters"]

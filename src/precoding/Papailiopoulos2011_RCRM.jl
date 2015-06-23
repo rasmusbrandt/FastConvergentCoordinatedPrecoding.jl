@@ -1,7 +1,7 @@
 immutable Papailiopoulos2011_RCRMState
-    U_norm::Array{Matrix{Complex128},1} # normalized U
+    U_optim::Array{Matrix{Complex128},1} # normalized U
     W::Array{Hermitian{Complex128},1}
-    V_norm::Array{Matrix{Complex128},1} # normalized V
+    V_optim::Array{Matrix{Complex128},1} # normalized V
     V::Array{Matrix{Complex128},1}
 end
 
@@ -31,7 +31,8 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, sigma2s, assignment, aux_params)
+        update_MSs!(state, channel, assignment, aux_params)
+        orthogonalize!(state, channel, Ps, sigma2s, assignment, aux_params)
         iters += 1
 
         # Results after this iteration
@@ -80,38 +81,32 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
 end
 
 function update_MSs!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, sigma2s, assignment, aux_params)
+    channel::SinglecarrierChannel, assignment, aux_params)
 
     ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
 
     for i = 1:channel.I
         for k in served_MS_ids(i, assignment)
-            # Received covariance and interference subspace basis
-            Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
+            # Interference subspace basis
             J_ext = Array(Float64, 2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
             for j = 1:channel.I
                 Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
                 H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-                for l in served_MS_ids(j, assignment)
-                    #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
-                    Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+                for l in served_MS_ids_except_me(k, j, assignment)
+                    Vr = real(state.V_optim[l]); Vi = imag(state.V_optim[l])
+                    V_ext = vcat(Vr, Vi)
 
-                    if l != k
-                        Vr = real(state.V_norm[l]); Vi = imag(state.V_norm[l])
-                        V_ext = vcat(Vr, Vi)
-
-                        J_ext[:,(1 + j_offset):(j_offset + ds[l])] = H_ext*V_ext
-                        j_offset += ds[l]
-                    end
+                    J_ext[:,(1 + j_offset):(j_offset + ds[l])] = H_ext*V_ext
+                    j_offset += ds[l]
                 end
             end
 
             # Effective channel
-            F = channel.H[k,i]*state.V_norm[k]
+            F = channel.H[k,i]*state.V_optim[k]
             Fr = real(F); Fi = imag(F)
-            F_ext = vcat(Fr, Fi) # only retain real part in multiplication)
+            F_ext = vcat(Fr, Fi)
 
-            # Approximated RCRM problem
+            # Local nuclear norm optimization problem
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
             objective = Convex.nuclear_norm(Us'*J_ext)
             constraint = (Convex.lambda_min(Us'*F_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
@@ -119,15 +114,43 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
             Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
-                state.U_norm[k] = Ur + im*Ui
-                state.U_norm[k] = state.U_norm[k]/vecnorm(state.U_norm[k])
+                state.U_optim[k] = Ur + im*Ui
             else
                 Lumberjack.error("Optimization problem in update_MSs!")
             end
+        end
+    end
+end
+
+function orthogonalize!(state::Papailiopoulos2011_RCRMState,
+    channel::SinglecarrierChannel, Ps, sigma2s, assignment, aux_params)
+
+    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+
+    # Orthogonalize precoders
+    for i = 1:channel.I
+        served = served_MS_ids(i, assignment); Nserved = length(served)
+        for k in served
+            Q, _ = qr(state.V_optim[k], thin=false)
+            state.V[k] = sqrt(Ps[i]/(ds[k]*Nserved))*Q[:,1:ds[k]]
+        end
+    end
+
+    # Calculate MMSE weights (for rate calculation)
+    for i = 1:channel.I
+        for k in served_MS_ids(i, assignment)
+            # Received covariance and interference subspace basis
+            Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
+            for j = 1:channel.I
+                for l in served_MS_ids(j, assignment)
+                    #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
+                    Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
+                end
+            end
 
             # MSE weight for rate calculation (w/ MMSE filter)
-            F_fullpower = channel.H[k,i]*state.V[k]
-            state.W[k] = Hermitian(inv(eye(ds[k]) - F_fullpower'*(Phi\F_fullpower)))
+            F = channel.H[k,i]*state.V[k]
+            state.W[k] = Hermitian(inv(eye(ds[k]) - F'*(Phi\F)))
         end
     end
 end
@@ -161,7 +184,7 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
                 end
             end
 
-            Ur = real(state.U_norm[k]); Ui = imag(state.U_norm[k])
+            Ur = real(state.U_optim[k]); Ui = imag(state.U_optim[k])
             U_ext = vcat(Ur, Ui)
             Hr = real(channel.H[k,i]); Hi = imag(channel.H[k,i])
             H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
@@ -180,19 +203,10 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
         for i = 1:channel.I
             for k in served_MS_ids(i, assignment)
                 Vr = Vs[k].value[1:channel.Ms[i],:]; Vi = Vs[k].value[channel.Ms[i]+1:end,:]
-                state.V_norm[k] = Vr + im*Vi
-                state.V_norm[k] = state.V_norm[k]/vecnorm(state.V_norm[k])
+                state.V_optim[k] = Vr + im*Vi
             end
         end
     else
         Lumberjack.error("Optimization problem in update_BSs!")
-    end
-
-    # Scale powers
-    for i = 1:channel.I
-        served = served_MS_ids(i, assignment); Nserved = length(served)
-        for k in served
-            state.V[k] = sqrt(Ps[i]/(ds[k]*Nserved))*state.V_norm[k]
-        end
     end
 end

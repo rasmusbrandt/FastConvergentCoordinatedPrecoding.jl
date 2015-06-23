@@ -55,6 +55,10 @@ plot_params = [
             ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
         ],
 
+        "Papailiopoulos2011_RCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
+        ],
+
         "Shi2011_WMMSE" => [
             ("logdet_rates", [ :color => "b", :linestyle => "-", :label => "WMMSE" ]),
         ],

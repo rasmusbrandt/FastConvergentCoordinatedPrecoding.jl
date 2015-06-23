@@ -11,11 +11,15 @@ using CoordinatedPrecoding
 import Lumberjack, Convex, Mosek
 
 export
-    # precoding
-    LogDetHeuristic, NuclearNormHeuristic
+    # proposed algorithms
+    LogDetHeuristic, NuclearNormHeuristic,
+
+    # baselines
+    Papailiopoulos2011_RCRM
 
 include("precoding/LogDetHeuristic.jl")
 include("precoding/NuclearNormHeuristic.jl")
+include("precoding/Papailiopoulos2011_RCRM.jl")
 
 ##########################################################################
 # Logging defaults

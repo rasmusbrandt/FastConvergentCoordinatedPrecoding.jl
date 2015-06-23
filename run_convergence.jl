@@ -27,6 +27,7 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -54,7 +55,6 @@ println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)
-
 ##########################################################################
 # Interfering broadcast channel
 simulation_params = [
@@ -67,6 +67,7 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -107,6 +108,7 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding

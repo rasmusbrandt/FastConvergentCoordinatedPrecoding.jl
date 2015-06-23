@@ -24,7 +24,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristic,
+        NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
@@ -64,7 +64,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristic,
+        NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
@@ -96,7 +96,7 @@ save("$(simulation_params["simulation_name"]).jld",
      "raw_results", raw_results)
 
 ##########################################################################
-# Triangular3Site network
+# TriangularMacro network
 simulation_params = [
     "simulation_name" => "SNR_$(start_time)-triangular3site",
     "Kc" => 2, "N" => 2, "M" => 4,
@@ -104,7 +104,7 @@ simulation_params = [
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        # NuclearNormHeuristic,
+        NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
         Shi2011_WMMSE,
@@ -125,7 +125,7 @@ simulation_params = [
     ]
 ]
 network =
-    setup_triangular3site_network(
+    setup_triangularmacro_network(
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         no_streams=simulation_params["d"])
 raw_results, _ = simulate(network, simulation_params)

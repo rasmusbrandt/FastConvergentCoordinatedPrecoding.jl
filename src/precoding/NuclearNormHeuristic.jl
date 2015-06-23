@@ -15,8 +15,7 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network)
     alphas = get_user_priorities(network); alphas_diagonal = Diagonal(alphas)
 
     aux_params = get_aux_precoding_params(network)
-    @defaultize_param! aux_params "NuclearNormHeuristic:perform_regularization" true
-    @defaultize_param! aux_params "NuclearNormHeuristic:solver" Mosek.MosekSolver(LOG=0)
+    @defaultize_param! aux_params "NuclearNormHeuristic:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0)
 
     state = NuclearNormHeuristicState(
         Array(Matrix{Complex128}, K),
@@ -31,7 +30,7 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network)
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, sigma2s, assignment, aux_params)
+        update_MSs!(state, channel, ds, sigma2s, assignment, aux_params)
         iters += 1
 
         # Results after this iteration
@@ -54,7 +53,7 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network)
 
         # Begin next iteration, unless the loop will end
         if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, assignment, aux_params)
+            update_BSs!(state, channel, Ps, ds, assignment, aux_params)
         end
     end
     if iters == aux_params["max_iters"]
@@ -80,45 +79,38 @@ function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network)
 end
 
 function update_MSs!(state::NuclearNormHeuristicState,
-    channel::SinglecarrierChannel, sigma2s, assignment, aux_params)
-
-    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+    channel::SinglecarrierChannel, ds, sigma2s, assignment, aux_params)
 
     for i = 1:channel.I
         for k in served_MS_ids(i, assignment)
+            # Optimization variable
+            Us = Convex.Variable(2*channel.Ns[k], ds[k])
+
             # Received covariance and interference subspace basis
+            constraints = Convex.Constraint[]
             Phi = Hermitian(complex(sigma2s[k]*eye(channel.Ns[k])))
-            J_ext = Array(Float64, 2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
+            Q = Convex.Variable(ds[k], 2*(sum(ds) - ds[k])); q_offset = 0
             for j = 1:channel.I
-                Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
-                H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
                 for l in served_MS_ids(j, assignment)
                     #Phi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
                     Base.LinAlg.BLAS.herk!(Phi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Phi.S)
 
                     if l != k
-                        Vr = real(state.V[l]); Vi = imag(state.V[l])
-                        V_ext = vcat(Vr, Vi)
-
-                        J_ext[:,(1 + j_offset):(j_offset + ds[l])] = H_ext*V_ext
-                        j_offset += ds[l]
+                        push!(constraints, Q[:, (1 + q_offset):(q_offset + 2*ds[l])] == Us'*cmat(channel.H[k,j]*state.V[l]))
+                        q_offset += ds[l]
                     end
                 end
             end
-            Phi_r = real(full(Phi)); Phi_i = imag(full(Phi))
-            Phi_ext = Symmetric(hvcat((2,2), Phi_r, -Phi_i, Phi_i, Phi_r))
 
             # Effective desired channel
             F = channel.H[k,i]*state.V[k]
-            Fr = real(F); Fi = imag(F)
-            F_ext = vcat(Fr, Fi)
 
             # Receive filter
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
-            MSE = ds[k] - 2*trace(Us'*F_ext) + Convex.sum_squares(sqrtm(Phi_ext)*Us)
-            IntfNN = Convex.nuclear_norm(Us'*J_ext)
-            objective = MSE + aux_params["rho"]*IntfNN
-            problem = Convex.minimize(objective)
+            MSE_term = Convex.sum_squares(cmat(sqrtm(full(Phi)))*Us) - 2*trace(Us'*cvec(F))
+            IntfNN = Convex.nuclear_norm(Q)
+            objective = MSE_term + aux_params["rho"]*IntfNN
+            problem = Convex.minimize(objective, constraints)
             Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
@@ -138,9 +130,7 @@ function update_MSs!(state::NuclearNormHeuristicState,
 end
 
 function update_BSs!(state::NuclearNormHeuristicState,
-    channel::SinglecarrierChannel, Ps, assignment, aux_params)
-
-    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+    channel::SinglecarrierChannel, Ps, ds, assignment, aux_params)
 
     Vs = Array(Convex.Variable, channel.K)
     objective = Convex.Constant(0)
@@ -153,51 +143,39 @@ function update_BSs!(state::NuclearNormHeuristicState,
         
         for j = 1:channel.I
             for l in served_MS_ids(j, assignment)
-                Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.W[l]*state.U[l]')*channel.H[l,i])
+                Gamma += Hermitian(channel.H[l,i]'*(state.U[l]*state.Y[l]*state.U[l]')*channel.H[l,i])
             end
         end
-        Gamma_r = real(full(Gamma)); Gamma_i = imag(full(Gamma))
-        Gamma_ext = Symmetric(hvcat((2,2), Gamma_r, -Gamma_i, Gamma_i, Gamma_r))
-        Gamma_ext_sqrtm = sqrtm(Gamma_ext)
+        Gamma_ext_sqrtm = cmat(sqrtm(full(Gamma)))
 
         # Precoders and weighted MMSE objective contribution for served users
         used_power = Convex.Constant(0)
         for k in served_MS_ids(i, assignment)
             # Effective desired channel
             G = channel.H[k,i]'*state.U[k]*state.Y[k]
-            Gr = real(G); Gi = imag(G)
-            G_ext = vcat(Gr, Gi)
 
             Vs[k] = Convex.Variable(2*channel.Ms[i], ds[k])
-            objective += Convex.sum_squares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(G_ext'*Vs[k])
+            objective += Convex.sum_squares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(cvec(G)'*Vs[k])
             used_power += Convex.sum_squares(Vs[k])
         end
         push!(constraints, used_power <= Ps[i])
     end
 
     # Interference subspace basis nuclear norm regularization
-    if aux_params["NuclearNormHeuristic:perform_regularization"]
-        for i = 1:channel.I
-            for k in served_MS_ids(i, assignment)
-                J_ext = Convex.Variable(2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
+    for i = 1:channel.I
+        for k in served_MS_ids(i, assignment)
+            Q = Convex.Variable(2*ds[k], sum(ds) - ds[k]); q_offset = 0
 
-                for j = 1:channel.I
-                    Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
-                    H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-
-                    for l in served_MS_ids_except_me(k, j, assignment)
-                        push!(constraints, J_ext[:, (1 + j_offset):(j_offset + ds[l])] == H_ext*Vs[j])
-                        j_offset += ds[l]
-                    end
+            for j = 1:channel.I
+                for l in served_MS_ids_except_me(k, j, assignment)
+                    push!(constraints, Q[:, (1 + q_offset):(q_offset + ds[l])] == cmat(channel.H[k,j]'*state.U[k])'*Vs[l])
+                    q_offset += ds[l]
                 end
-
-                Ur = real(state.U[k]); Ui = imag(state.U[k])
-                U_ext = vcat(Ur, Ui)
-
-                user_IntfNN = Convex.nuclear_norm(U_ext'*J_ext)
-
-                objective += aux_params["rho"]*user_IntfNN
             end
+
+            user_IntfNN = Convex.nuclear_norm(Q)
+
+            objective += aux_params["rho"]*user_IntfNN
         end
     end
 

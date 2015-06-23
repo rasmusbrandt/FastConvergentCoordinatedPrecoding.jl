@@ -5,16 +5,6 @@ immutable Papailiopoulos2011_RCRMState
     V::Array{Matrix{Complex128},1}
 end
 
-function cvec(A)
-    Ar = real(A); Ai = imag(A)
-    return vcat(Ar, Ai)
-end
-
-function cmat(A)
-    Ar = real(A); Ai = imag(A)
-    return hvcat((2,2), Ar, -Ai, Ai, Ar)
-end
-
 function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network)
     assignment = get_assignment(network)
 

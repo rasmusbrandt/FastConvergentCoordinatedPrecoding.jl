@@ -55,6 +55,7 @@ println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)
+
 ##########################################################################
 # Interfering broadcast channel
 simulation_params = [
@@ -97,9 +98,9 @@ save("$(simulation_params["simulation_name"]).jld",
      "raw_results", raw_results)
 
 ##########################################################################
-# Triangular3Site network
+# TriangularMacro network
 simulation_params = [
-    "simulation_name" => "convergence_$(start_time)-triangular3site",
+    "simulation_name" => "convergence_$(start_time)-triangularmacro",
     "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 30.,
     "d" => 1,
@@ -126,7 +127,7 @@ simulation_params = [
     ]
 ]
 network =
-    setup_triangular3site_network(
+    setup_triangularmacro_network(
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])

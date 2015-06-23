@@ -5,6 +5,16 @@ immutable Papailiopoulos2011_RCRMState
     V::Array{Matrix{Complex128},1}
 end
 
+function cvec(A)
+    Ar = real(A); Ai = imag(A)
+    return vcat(Ar, Ai)
+end
+
+function cmat(A)
+    Ar = real(A); Ai = imag(A)
+    return hvcat((2,2), Ar, -Ai, Ai, Ar)
+end
+
 function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network)
     assignment = get_assignment(network)
 
@@ -31,8 +41,8 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
 
     iters = 0; conv_crit = Inf
     while iters < aux_params["max_iters"]
-        update_MSs!(state, channel, assignment, aux_params)
-        orthogonalize!(state, channel, Ps, sigma2s, assignment, aux_params)
+        update_MSs!(state, channel, ds, assignment, aux_params)
+        orthogonalize!(state, channel, Ps, ds, sigma2s, assignment, aux_params)
         iters += 1
 
         # Results after this iteration
@@ -55,7 +65,7 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
 
         # Begin next iteration, unless the loop will end
         if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, assignment, aux_params)
+            update_BSs!(state, channel, Ps, ds, assignment, aux_params)
         end
     end
     if iters == aux_params["max_iters"]
@@ -81,36 +91,30 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
 end
 
 function update_MSs!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, assignment, aux_params)
-
-    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+    channel::SinglecarrierChannel, ds, assignment, aux_params)
 
     for i = 1:channel.I
         for k in served_MS_ids(i, assignment)
-            # Interference subspace basis
-            J_ext = Array(Float64, 2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
-            for j = 1:channel.I
-                Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
-                H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-                for l in served_MS_ids_except_me(k, j, assignment)
-                    Vr = real(state.V_optim[l]); Vi = imag(state.V_optim[l])
-                    V_ext = vcat(Vr, Vi)
+            # Optimization variable
+            Us = Convex.Variable(2*channel.Ns[k], ds[k])
 
-                    J_ext[:,(1 + j_offset):(j_offset + ds[l])] = H_ext*V_ext
-                    j_offset += ds[l]
+            # Interference subspace basis and objective
+            constraints = Convex.Constraint[]
+            Q = Convex.Variable(ds[k], 2*(sum(ds) - ds[k])); q_offset = 0
+            for j = 1:channel.I
+                for l in served_MS_ids_except_me(k, j, assignment)
+                    push!(constraints, Q[:, (1 + q_offset):(q_offset + 2*ds[l])] == Us'*cmat(channel.H[k,j]*state.V_optim[l]))
+                    q_offset += ds[l]
                 end
             end
+            objective = Convex.nuclear_norm(Q)
 
-            # Effective channel
-            F = channel.H[k,i]*state.V_optim[k]
-            Fr = real(F); Fi = imag(F)
-            F_ext = vcat(Fr, Fi)
+            # Effective channel and constraint
+            F = cvec(channel.H[k,i]*state.V_optim[k])
+            push!(constraints, Convex.lambda_min(Us'*F) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
 
-            # Local nuclear norm optimization problem
-            Us = Convex.Variable(2*channel.Ns[k], ds[k])
-            objective = Convex.nuclear_norm(Us'*J_ext)
-            constraint = (Convex.lambda_min(Us'*F_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
-            problem = Convex.minimize(objective, constraint)
+            # Solve local approximated RCRM optimization problem
+            problem = Convex.minimize(objective, constraints)
             Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
             if problem.status == :Optimal
                 Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
@@ -123,9 +127,7 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
 end
 
 function orthogonalize!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, Ps, sigma2s, assignment, aux_params)
-
-    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+    channel::SinglecarrierChannel, Ps, ds, sigma2s, assignment, aux_params)
 
     # Orthogonalize precoders
     for i = 1:channel.I
@@ -148,7 +150,7 @@ function orthogonalize!(state::Papailiopoulos2011_RCRMState,
                 end
             end
 
-            # MSE weight for rate calculation (w/ MMSE filter)
+            # MMSE weight
             F = channel.H[k,i]*state.V[k]
             state.W[k] = Hermitian(inv(eye(ds[k]) - F'*(Phi\F)))
         end
@@ -156,9 +158,7 @@ function orthogonalize!(state::Papailiopoulos2011_RCRMState,
 end
 
 function update_BSs!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, Ps, assignment, aux_params)
-
-    ds = [ size(state.W[k], 1) for k = 1:length(state.W) ]
+    channel::SinglecarrierChannel, Ps, ds, assignment, aux_params)
 
     # Define optimization variables
     Vs = Array(Convex.Variable, channel.K)
@@ -168,35 +168,27 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
         end
     end
 
-    # Interference subspace basis nuclear norm
-    objective = Convex.Constant(0)
-    constraints = Convex.Constraint[]
+    # Build objective and constraints
+    objective = Convex.Constant(0); constraints = Convex.Constraint[]
     for i = 1:channel.I
         for k in served_MS_ids(i, assignment)
-            J_ext = Convex.Variable(2*channel.Ns[k], sum(ds) - ds[k]); j_offset = 0
+            # Interference subspace basis and user objective
+            Q = Convex.Variable(2*ds[k], sum(ds) - ds[k]); q_offset = 0
             for j = 1:channel.I
-                Hr = real(channel.H[k,j]); Hi = imag(channel.H[k,j])
-                H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-
                 for l in served_MS_ids_except_me(k, j, assignment)
-                    push!(constraints, J_ext[:, (1 + j_offset):(j_offset + ds[l])] == H_ext*Vs[j])
-                    j_offset += ds[l]
+                    push!(constraints, Q[:, (1 + q_offset):(q_offset + ds[l])] == cmat(channel.H[k,j]'*state.U_optim[k])'*Vs[l])
+                    q_offset += ds[l]
                 end
             end
+            objective += Convex.nuclear_norm(Q)
 
-            Ur = real(state.U_optim[k]); Ui = imag(state.U_optim[k])
-            U_ext = vcat(Ur, Ui)
-            Hr = real(channel.H[k,i]); Hi = imag(channel.H[k,i])
-            H_ext = hvcat((2,2), Hr, -Hi, Hi, Hr)
-
-            user_objective = Convex.nuclear_norm(U_ext'*J_ext)
-            user_constraint = (Convex.lambda_min(U_ext'*H_ext*Vs[k]) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
-
-            objective += user_objective
-            push!(constraints, user_constraint)
+            # Effective channel and user constraint
+            F = cvec(channel.H[k,i]'*state.U_optim[k])
+            push!(constraints, Convex.lambda_min(F'*Vs[k]) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
         end
     end
 
+    # Solve global approximated RCRM optimization problem
     problem = Convex.minimize(objective, constraints)
     Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
     if problem.status == :Optimal

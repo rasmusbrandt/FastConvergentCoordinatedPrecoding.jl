@@ -94,6 +94,7 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
         for k in served_MS_ids(i, assignment)
             # Optimization variable
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
+            Us_r = Us[1:channel.Ns[k],:]; Us_i = Us[channel.Ns[k]+1:end,:]
 
             # Interference subspace basis and objective
             constraints = Convex.Constraint[]
@@ -107,15 +108,17 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
             objective = Convex.nuclear_norm(Q)
 
             # Effective channel and constraint
-            F = cvec(channel.H[k,i]*state.V_optim[k])
-            push!(constraints, Convex.lambda_min(Us'*F) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
+            F = channel.H[k,i]*state.V_optim[k]; F_r = real(F); F_i = imag(F)
+            UF_r = Us_r'*F_r - Us_i'*F_i
+            UF_i = Us_r'*F_i + Us_i'*F_r
+            UF_ext = hvcat(2, UF_r, -UF_i, UF_i, UF_r)
+            push!(constraints, Convex.lambda_min(UF_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
 
             # Solve local approximated RCRM optimization problem
             problem = Convex.minimize(objective, constraints)
             Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
             if problem.status == :Optimal
-                Ur = Us.value[1:channel.Ns[k],:]; Ui = Us.value[channel.Ns[k]+1:end,:]
-                state.U_optim[k] = Ur + im*Ui
+                state.U_optim[k] = Convex.evaluate(Us_r) + im*Convex.evaluate(Us_i)
             else
                 Lumberjack.error("Optimization problem in update_MSs!")
             end
@@ -180,8 +183,12 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
             objective += Convex.nuclear_norm(Q)
 
             # Effective channel and user constraint
-            F = cvec(channel.H[k,i]'*state.U_optim[k])
-            push!(constraints, Convex.lambda_min(F'*Vs[k]) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
+            G = channel.H[k,i]'*state.U_optim[k]; G_r = real(G); G_i = imag(G)
+            Vs_r = Vs[k][1:channel.Ms[i],:]; Vs_i = Vs[k][channel.Ms[i]+1:end,:]
+            GV_r = G_r'*Vs_r - G_i'*Vs_i
+            GV_i = G_i'*Vs_r + G_r'*Vs_i
+            GV_ext = hvcat(2, GV_r, -GV_i, GV_i, GV_r)
+            push!(constraints, Convex.lambda_min(GV_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
         end
     end
 
@@ -191,8 +198,8 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
     if problem.status == :Optimal
         for i = 1:channel.I
             for k in served_MS_ids(i, assignment)
-                Vr = Vs[k].value[1:channel.Ms[i],:]; Vi = Vs[k].value[channel.Ms[i]+1:end,:]
-                state.V_optim[k] = Vr + im*Vi
+                Vs_r = Vs[k][1:channel.Ms[i],:]; Vs_i = Vs[k][channel.Ms[i]+1:end,:]
+                state.V_optim[k] = Convex.evaluate(Vs_r) + im*Convex.evaluate(Vs_i)
             end
         end
     else

@@ -5,7 +5,7 @@ immutable NuclearNormHeuristicState
     V::Array{Matrix{Complex128},1}
 end
 
-function NuclearNormHeuristic(channel::SinglecarrierChannel, network::Network)
+function NuclearNormHeuristic(channel::SinglecarrierChannel, network)
     assignment = get_assignment(network)
 
     K = get_no_MSs(network)

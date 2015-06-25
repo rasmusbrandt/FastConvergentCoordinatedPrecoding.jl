@@ -6,7 +6,7 @@ immutable LogDetHeuristicState
     V::Array{Matrix{Complex128},1}
 end
 
-function LogDetHeuristic(channel::SinglecarrierChannel, network::Network)
+function LogDetHeuristic(channel::SinglecarrierChannel, network)
     assignment = get_assignment(network)
 
     K = get_no_MSs(network)

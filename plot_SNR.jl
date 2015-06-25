@@ -59,6 +59,14 @@ plot_params = [
             ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
         ],
 
+        "Du2013_ReweightedRCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM" ]),
+        ],
+
+        "Du2013_ReweightedRCRMl2Reg" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg" ]),
+        ],
+
         "Shi2011_WMMSE" => [
             ("logdet_rates", [ :color => "b", :linestyle => "-", :label => "WMMSE" ]),
         ],

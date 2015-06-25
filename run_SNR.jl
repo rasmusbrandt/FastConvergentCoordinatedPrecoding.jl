@@ -19,14 +19,16 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Interference channel
 simulation_params = [
     "simulation_name" => "SNR_$(start_time)-ic",
-    "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
-    "d" => 2,
-    "Ndrops" => 10, "Nsim" => 1,
+    "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
+    "d" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -34,7 +36,7 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "turbo_iters" => 10,
+        "turbo_iters" => 5,
 
         "rho" => 10.,
         "delta" => 1.,
@@ -61,12 +63,14 @@ simulation_params = [
     "simulation_name" => "SNR_$(start_time)-ibc",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
-        # Papailiopoulos2011_RCRM,
+        Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -74,7 +78,7 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "turbo_iters" => 10,
+        "turbo_iters" => 5,
 
         "rho" => 10.,
         "delta" => 1.,
@@ -101,12 +105,14 @@ simulation_params = [
     "simulation_name" => "SNR_$(start_time)-triangular3site",
     "Kc" => 2, "N" => 2, "M" => 4,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
-        # Papailiopoulos2011_RCRM,
+        Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -114,7 +120,7 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "turbo_iters" => 10,
+        "turbo_iters" => 5,
 
         "rho" => 10.,
         "delta" => 1.,

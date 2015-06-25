@@ -19,15 +19,17 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Interference channel
 simulation_params = [
     "simulation_name" => "convergence_$(start_time)-ic",
-    "I" => 3, "Kc" => 1, "N" => 3, "M" => 3,
+    "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
     "P_dBm" => 30.,
-    "d" => 2,
-    "Ndrops" => 10, "Nsim" => 1,
+    "d" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -35,13 +37,13 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 100,
+        "max_iters" => 20,
 
         "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 5]),
     ]
 ]
 network =
@@ -63,12 +65,14 @@ simulation_params = [
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
-        # Papailiopoulos2011_RCRM,
+        Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -82,7 +86,7 @@ simulation_params = [
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 5]),
     ]
 ]
 network =
@@ -104,12 +108,14 @@ simulation_params = [
     "Kc" => 2, "N" => 2, "M" => 4,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 2, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
-        # Papailiopoulos2011_RCRM,
+        Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -123,7 +129,7 @@ simulation_params = [
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 5]),
     ]
 ]
 network =

@@ -18,14 +18,16 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Performance test
 simulation_params = {
     "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
-    "P_dBm" => 40.,
+    "P_dBm" => 30.,
     "d" => 1,
     "Ntest" => 100,
     "precoding_methods" => [
         LogDetHeuristic,
-        NuclearNormHeuristic,
+        # NuclearNormHeuristic,
 
         Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding

@@ -1,11 +1,19 @@
-immutable Papailiopoulos2011_RCRMState
+immutable GeneralizedRCRMState
     U_optim::Array{Matrix{Complex128},1} # normalized U
-    W::Array{Hermitian{Complex128},1}
+    W::Array{Hermitian{Complex128},1}    # MMSE weight, for rate calculation
+    Y_ext::Array{Matrix{Float64},1}      # reweighting weights
     V_optim::Array{Matrix{Complex128},1} # normalized V
-    V::Array{Matrix{Complex128},1}
+    V::Array{Matrix{Complex128},1}       # V with full power, for MMSE weight calculation
 end
 
-function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network)
+Papailiopoulos2011_RCRM(channel, network) =
+    GeneralizedRCRM(channel, network, reweight=false, l2_reg=false)
+Du2013_ReweightedRCRM(channel, network) =
+    GeneralizedRCRM(channel, network, reweight=true, l2_reg=false)
+Du2013_ReweightedRCRMl2Reg(channel, network) =
+    GeneralizedRCRM(channel, network, reweight=true, l2_reg=true)
+
+function GeneralizedRCRM(channel::SinglecarrierChannel, network; reweight=false, l2_reg=false)
     assignment = get_assignment(network)
 
     K = get_no_MSs(network); I = get_no_BSs(network)
@@ -14,55 +22,49 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
     ds = get_no_streams(network); max_d = maximum(ds)
 
     aux_params = get_aux_precoding_params(network)
-    @defaultize_param! aux_params "Papailiopoulos2011_RCRM:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0)
-    @defaultize_param! aux_params "Papailiopoulos2011_RCRM:epsilon" 1e-1
+    @defaultize_param! aux_params "GeneralizedRCRM:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0)
+    @defaultize_param! aux_params "GeneralizedRCRM:epsilon" 1e-1
+    @defaultize_param! aux_params "GeneralizedRCRM:reweight_iters" 3
+    @defaultize_param! aux_params "GeneralizedRCRM:inner_iters" 3
 
-    state = Papailiopoulos2011_RCRMState(
+    state = GeneralizedRCRMState(
         Array(Matrix{Complex128}, K),
         initial_MSE_weights(channel, Ps, sigma2s, ds, assignment, aux_params),
+        [ eye(2ds[k]) for k = 1:K ],
         initial_precoders(channel, ones(I), ones(K), ds, assignment, aux_params),
         initial_precoders(channel, Ps, sigma2s, ds, assignment, aux_params))
     objective = Float64[]
-    utilities = zeros(Float64, K, 1, aux_params["max_iters"])
-    logdet_rates = zeros(Float64, K, max_d, aux_params["max_iters"])
-    MMSE_rates = zeros(Float64, K, max_d, aux_params["max_iters"])
-    allocated_power = zeros(Float64, K, max_d, aux_params["max_iters"])
+    utilities = zeros(Float64, K, 1, aux_params["GeneralizedRCRM:reweight_iters"]*aux_params["GeneralizedRCRM:inner_iters"])
+    logdet_rates = zeros(Float64, K, max_d, aux_params["GeneralizedRCRM:reweight_iters"]*aux_params["GeneralizedRCRM:inner_iters"])
+    MMSE_rates = zeros(Float64, K, max_d, aux_params["GeneralizedRCRM:reweight_iters"]*aux_params["GeneralizedRCRM:inner_iters"])
+    allocated_power = zeros(Float64, K, max_d, aux_params["GeneralizedRCRM:reweight_iters"]*aux_params["GeneralizedRCRM:inner_iters"])
 
-    iters = 0; conv_crit = Inf
-    while iters < aux_params["max_iters"]
-        iter_utilities = update_MSs!(state, channel, ds, assignment, aux_params)
-        orthogonalize!(state, channel, Ps, ds, sigma2s, assignment, aux_params)
-        iters += 1
+    iters = 0; reweight_iters = 0
+    while reweight_iters < aux_params["GeneralizedRCRM:reweight_iters"]
+        inner_iters = 0
+        while inner_iters < aux_params["GeneralizedRCRM:inner_iters"]
+            iter_utilities = update_MSs!(state, channel, ds, assignment, aux_params, reweight, l2_reg)
+            orthogonalize!(state, channel, Ps, ds, sigma2s, assignment, aux_params)
+            iters += 1
+            inner_iters += 1
 
-        # Results after this iteration
-        utilities[:,:,iters] = iter_utilities
-        push!(objective, sum(utilities[:,:,iters]))
-        logdet_rates[:,:,iters] = calculate_logdet_rates(state)
-        MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
-        allocated_power[:,:,iters] = calculate_allocated_power(state)
+            # Results after this iteration
+            utilities[:,:,iters] = iter_utilities
+            push!(objective, sum(utilities[:,:,iters]))
+            logdet_rates[:,:,iters] = calculate_logdet_rates(state)
+            MMSE_rates[:,:,iters] = calculate_MMSE_rates(state)
+            allocated_power[:,:,iters] = calculate_allocated_power(state)
 
-        # Check convergence
-        if iters >= 2
-            conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
-            if conv_crit < aux_params["stop_crit"]
-                Lumberjack.debug("Papailiopoulos2011_RCRM converged.",
-                    { :no_iters => iters, :final_objective => objective[end],
-                      :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
-                      :max_iters => aux_params["max_iters"] })
-                break
+            # Begin next iteration, unless the loop will end
+            if iters < aux_params["GeneralizedRCRM:inner_iters"]
+                update_BSs!(state, channel, Ps, ds, assignment, aux_params, reweight, l2_reg)
             end
         end
 
-        # Begin next iteration, unless the loop will end
-        if iters < aux_params["max_iters"]
-            update_BSs!(state, channel, Ps, ds, assignment, aux_params)
+        if reweight
+            reweight!(state, channel,ds, assignment, aux_params)
         end
-    end
-    if iters == aux_params["max_iters"]
-        Lumberjack.debug("Papailiopoulos2011_RCRM did NOT converge.",
-            { :no_iters => iters, :final_objective => objective[end],
-              :conv_crit => conv_crit, :stop_crit => aux_params["stop_crit"],
-              :max_iters => aux_params["max_iters"] })
+        reweight_iters += 1
     end
 
     results = PrecodingResults()
@@ -82,8 +84,8 @@ function Papailiopoulos2011_RCRM(channel::SinglecarrierChannel, network::Network
     return results
 end
 
-function update_MSs!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, ds, assignment, aux_params)
+function update_MSs!(state::GeneralizedRCRMState,
+    channel::SinglecarrierChannel, ds, assignment, aux_params, reweight, l2_reg)
 
     utilities = Array(Float64, channel.K)
 
@@ -102,24 +104,31 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
             J_r = Us_r'*F_r + Us_i'*F_i
             J_i = Us_r'*F_i - Us_i'*F_r
 
-            push!(constraints, Q_ext[1:ds[k],     (1 + real_offset):(real_offset + ds[k])] ==  J_r)
-            push!(constraints, Q_ext[1:ds[k],     (1 + imag_offset):(imag_offset + ds[k])] == -J_i)
-            push!(constraints, Q_ext[ds[k]+1:end, (1 + real_offset):(real_offset + ds[k])] ==  J_i)
-            push!(constraints, Q_ext[ds[k]+1:end, (1 + imag_offset):(imag_offset + ds[k])] ==  J_r)
-            real_offset += ds[k]; imag_offset += ds[k]
+            push!(constraints, Q_ext[1:ds[k],     (1 + real_offset):(ds[l] + real_offset)] ==  J_r)
+            push!(constraints, Q_ext[1:ds[k],     (1 + imag_offset):(ds[l] + imag_offset)] == -J_i)
+            push!(constraints, Q_ext[ds[k]+1:end, (1 + real_offset):(ds[l] + real_offset)] ==  J_i)
+            push!(constraints, Q_ext[ds[k]+1:end, (1 + imag_offset):(ds[l] + imag_offset)] ==  J_r)
+            real_offset += ds[l]; imag_offset += ds[l]
         end; end
-        objective = 0.5*Convex.nuclear_norm(Q_ext)
+        if reweight
+            objective = 0.5*Convex.nuclear_norm(state.Y_ext[k]*Q_ext)
+        else
+            objective = 0.5*Convex.nuclear_norm(Q_ext)
+        end
+        if l2_reg
+            objective += aux_params["rho"]*Convex.sum_squares(Q_ext)
+        end
 
         # Effective channel and user constraint
         F = channel.H[k,i]*state.V_optim[k]; F_r = real(F); F_i = imag(F)
         S_r = Us_r'*F_r + Us_i'*F_i
         S_i = Us_r'*F_i - Us_i'*F_r
         S_ext = hvcat(2, S_r, -S_i, S_i, S_r)
-        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
+        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
 
         # Solve local approximated RCRM optimization problem
         problem = Convex.minimize(objective, constraints)
-        Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
+        Convex.solve!(problem, aux_params["GeneralizedRCRM:solver"])
         if problem.status == :Optimal
             state.U_optim[k] = Convex.evaluate(Us_r) + im*Convex.evaluate(Us_i)
         else
@@ -132,8 +141,8 @@ function update_MSs!(state::Papailiopoulos2011_RCRMState,
     return utilities
 end
 
-function update_BSs!(state::Papailiopoulos2011_RCRMState,
-    channel::SinglecarrierChannel, Ps, ds, assignment, aux_params)
+function update_BSs!(state::GeneralizedRCRMState,
+    channel::SinglecarrierChannel, Ps, ds, assignment, aux_params, reweight, l2_reg)
 
     # Define optimization variables
     Vs = Array(Convex.Variable, channel.K)
@@ -153,13 +162,20 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
             J_r = G_r'*Vs_r + G_i'*Vs_i
             J_i = -G_i'*Vs_r + G_r'*Vs_i
 
-            push!(constraints, Q_ext[1:ds[k],     (1 + real_offset):(real_offset + ds[k])] ==  J_r)
-            push!(constraints, Q_ext[1:ds[k],     (1 + imag_offset):(imag_offset + ds[k])] == -J_i)
-            push!(constraints, Q_ext[ds[k]+1:end, (1 + real_offset):(real_offset + ds[k])] ==  J_i)
-            push!(constraints, Q_ext[ds[k]+1:end, (1 + imag_offset):(imag_offset + ds[k])] ==  J_r)
-            real_offset += ds[k]; imag_offset += ds[k]
+            push!(constraints, Q_ext[1:ds[k],     (1 + real_offset):(ds[l] + real_offset)] ==  J_r)
+            push!(constraints, Q_ext[1:ds[k],     (1 + imag_offset):(ds[l] + imag_offset)] == -J_i)
+            push!(constraints, Q_ext[ds[k]+1:end, (1 + real_offset):(ds[l] + real_offset)] ==  J_i)
+            push!(constraints, Q_ext[ds[k]+1:end, (1 + imag_offset):(ds[l] + imag_offset)] ==  J_r)
+            real_offset += ds[l]; imag_offset += ds[l]
         end; end
-        objective += 0.5*Convex.nuclear_norm(Q_ext)
+        if reweight
+            objective += 0.5*Convex.nuclear_norm(state.Y_ext[k]*Q_ext)
+        else
+            objective += 0.5*Convex.nuclear_norm(Q_ext)
+        end
+        if l2_reg
+            objective += aux_params["rho"]*Convex.sum_squares(Q_ext)
+        end
 
         # Effective channel and user constraint
         Vs_r = Vs[k][1:channel.Ms[i],:]; Vs_i = Vs[k][channel.Ms[i]+1:end,:]
@@ -167,12 +183,12 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
         S_r = G_r'*Vs_r + G_i'*Vs_i
         S_i = -G_i'*Vs_r + G_r'*Vs_i
         S_ext = hvcat(2, S_r, -S_i, S_i, S_r)
-        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["Papailiopoulos2011_RCRM:epsilon"])
+        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
     end; end
 
     # Solve global approximated RCRM optimization problem
     problem = Convex.minimize(objective, constraints)
-    Convex.solve!(problem, aux_params["Papailiopoulos2011_RCRM:solver"])
+    Convex.solve!(problem, aux_params["GeneralizedRCRM:solver"])
     if problem.status == :Optimal
         for i = 1:channel.I; for k in served_MS_ids(i, assignment)
             Vs_r = Vs[k][1:channel.Ms[i],:]; Vs_i = Vs[k][channel.Ms[i]+1:end,:]
@@ -183,7 +199,7 @@ function update_BSs!(state::Papailiopoulos2011_RCRMState,
     end
 end
 
-function orthogonalize!(state::Papailiopoulos2011_RCRMState,
+function orthogonalize!(state::GeneralizedRCRMState,
     channel::SinglecarrierChannel, Ps, ds, sigma2s, assignment, aux_params)
 
     # Orthogonalize precoders
@@ -207,5 +223,23 @@ function orthogonalize!(state::Papailiopoulos2011_RCRMState,
         # MMSE weight
         F = channel.H[k,i]*state.V[k]
         state.W[k] = Hermitian(inv(eye(ds[k]) - F'*(Phi\F)))
+    end; end
+end
+
+function reweight!(state::GeneralizedRCRMState,
+    channel::SinglecarrierChannel, ds, assignment, aux_params)
+    
+    for i = 1:channel.I; for k in served_MS_ids(i, assignment)
+        J = Array(Complex128, ds[k], sum(ds) - ds[k]); offset = 0
+        for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, assignment)
+            Jt = state.U_optim[k]'*channel.H[k,j]*state.V_optim[l]
+            J[:, (1 + offset):(ds[l] + offset)] = Jt
+            offset += ds[l]
+        end; end
+        s = svdfact(J, thin=true)
+        Y = s.U*Diagonal(1./(s.S + aux_params["delta"]))*s.U'
+        Y_r = real(Y); Y_i = imag(Y)
+
+        state.Y_ext[k] = hvcat(2, Y_r, -Y_i, Y_i, Y_r)
     end; end
 end

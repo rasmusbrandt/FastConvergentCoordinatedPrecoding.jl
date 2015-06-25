@@ -92,38 +92,36 @@ function update_MSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel,
     rho = aux_params["rho"]; delta = aux_params["delta"]
     ds = [ size(state.W[k], 1) for k = 1:channel.K ]
 
-    for i = 1:channel.I
-        for k in served_MS_ids(i, assignment)
-            # Received interference covariance
-            Psi = Hermitian(complex(zeros(channel.Ns[k], channel.Ns[k])))
-            for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, assignment)
-                #Psi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
-                Base.LinAlg.BLAS.herk!(Psi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Psi.S)
-            end; end
+    for i = 1:channel.I; for k in served_MS_ids(i, assignment)
+        # Received interference covariance
+        Psi = Hermitian(complex(zeros(channel.Ns[k], channel.Ns[k])))
+        for j = 1:channel.I; for l in served_MS_ids_except_me(k, j, assignment)
+            #Psi += Hermitian(channel.H[k,j]*(state.V[l]*state.V[l]')*channel.H[k,j]')
+            Base.LinAlg.BLAS.herk!(Psi.uplo, 'N', complex(1.), channel.H[k,j]*state.V[l], complex(1.), Psi.S)
+        end; end
 
-            # Effective desired channel
-            effective_channel = channel.H[k,i]*state.V[k]
+        # Effective desired channel
+        effective_channel = channel.H[k,i]*state.V[k]
 
-            # Total received signal covariance
-            Phi = Hermitian(Psi + effective_channel*effective_channel' + sigma2s[k]*eye(channel.Ns[k]))
+        # Total received signal covariance
+        Phi = Hermitian(Psi + effective_channel*effective_channel' + sigma2s[k]*eye(channel.Ns[k]))
 
-            # MSE weight for rate calculation (w/ MMSE filter)
-            state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
+        # MSE weight for rate calculation (w/ MMSE filter)
+        state.W[k] = Hermitian(inv(eye(ds[k]) - effective_channel'*(Phi\effective_channel)))
 
-            for turbo_iters = 1:aux_params["turbo_iters"]
-                # Receive filter (N.B., not MMSE filter!)
-                state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + rho*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
+        for turbo_iters = 1:aux_params["turbo_iters"]
+            # Receive filter (N.B., not MMSE filter!)
+            state.U[k] = reshape((kron(transpose(full(state.Y[k])), full(Phi)) + rho*kron(transpose(full(state.Z[k])), full(Psi)))\vec(effective_channel*state.Y[k]), channel.Ns[k], ds[k])
 
-                # MSE
-                E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
-                state.Y[k] = Hermitian(inv(E))
+            # MSE
+            E = eye(ds[k]) - state.U[k]'*effective_channel - effective_channel'*state.U[k] + state.U[k]'*Phi*state.U[k]
+            state.Y[k] = Hermitian(inv(E))
 
-                # Leakage
-                F = delta*eye(ds[k]) + state.U[k]'*Psi*state.U[k]
-                state.Z[k] = Hermitian(inv(F))
-            end
+            # Leakage
+            F = delta*eye(ds[k]) + state.U[k]'*Psi*state.U[k]
+            state.Z[k] = Hermitian(inv(F))
         end
-    end
+    end; end
 end
 
 function update_BSs!(state::LogDetHeuristicState, channel::SinglecarrierChannel, 

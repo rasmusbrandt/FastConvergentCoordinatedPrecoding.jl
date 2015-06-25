@@ -17,7 +17,6 @@ export
     # baselines
     Papailiopoulos2011_RCRM
 
-include("precoding/precoding.jl")
 include("precoding/LogDetHeuristic.jl")
 include("precoding/NuclearNormHeuristic.jl")
 include("precoding/Papailiopoulos2011_RCRM.jl")

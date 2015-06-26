@@ -6,6 +6,10 @@ env.user = 'rabr5411'
 env.code_dir = '/home/rabr5411/sims/MGRegularizedWSR.jl'
 env.git_url = 'git@gitr.sys.kth.se:rabr5411/MGRegularizedWSR.jl.git'
 
+def delphi():
+    env.hosts = 'delphi.uberwi.se'
+    env.port = 54322
+
 def sim401():
     env.hosts = 'sim401.ee.kth.se'
 

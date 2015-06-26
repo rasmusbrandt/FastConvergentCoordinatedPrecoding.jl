@@ -3,4 +3,6 @@ CoordinatedPrecoding
 Convex
 Mosek
 
+ArgParse
 Lumberjack
+HDF5

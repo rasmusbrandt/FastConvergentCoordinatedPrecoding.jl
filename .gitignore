@@ -1,5 +1,5 @@
-batch/results
-tmp
-*.pdf
 *.jld
+*.pdf
+*.eps
+*.log
 *.pyc

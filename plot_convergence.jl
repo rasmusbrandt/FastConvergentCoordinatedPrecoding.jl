@@ -42,7 +42,7 @@ plot_params = [
 
     "legend" => [
         :loc => "best",
-        :fontsize => 8,
+        :fontsize => 4,
     ],
 
     "methods" => [

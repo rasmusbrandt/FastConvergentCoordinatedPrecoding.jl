@@ -22,7 +22,7 @@ function GeneralizedRCRM(channel::SinglecarrierChannel, network; reweight=false,
     ds = get_no_streams(network); max_d = maximum(ds)
 
     aux_params = get_aux_precoding_params(network)
-    @defaultize_param! aux_params "GeneralizedRCRM:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0)
+    @defaultize_param! aux_params "GeneralizedRCRM:solver" Mosek.MosekSolver(LOG=0, MAX_NUM_WARNINGS=0, NUM_THREADS=1)
     @defaultize_param! aux_params "GeneralizedRCRM:epsilon" 1e-1
 
     state = GeneralizedRCRMState(

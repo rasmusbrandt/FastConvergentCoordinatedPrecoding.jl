@@ -28,7 +28,7 @@ postprocess_params = [
             ("logdet_rates",),
         ],
 
-        "Gomadam2008_MaxSINR" => [
+        "Du2013_ReweightedRCRM" => [
             ("logdet_rates",),
         ],
 
@@ -61,7 +61,7 @@ ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,3], color="g"
 ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"TurboCP ($L_\text{turbo} = 2$)")
 ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"TurboCP ($L_\text{turbo} = 1$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE")
-ax[:plot](xvals, results_mean["Gomadam2008_MaxSINR"]["logdet_rates"][:,1], color="r", linestyle="-", label="MaxSINR")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM")
 ax[:plot](xvals, results_mean["Eigenprecoding"]["intercell_tdma_logdet_rates"][:,1], color="c", linestyle="-", label="TDMA")
 ax[:plot](xvals, results_mean["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoord. transm.")
 
@@ -78,4 +78,4 @@ PyPlot.setp(legend_frame, linewidth=0.5)
 
 ##########################################################################
 # Write file
-fig[:savefig]("SNR-turbo_iters.pdf")
+fig[:savefig]("SNR-turbo_iters.eps")

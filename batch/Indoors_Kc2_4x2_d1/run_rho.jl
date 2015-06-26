@@ -27,6 +27,7 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        # Du2013_ReweightedRCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -39,7 +40,7 @@ simulation_params = [
 
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-4, 2, 100)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-4, 2, 10)),
 ]
 network =
     setup_indoors_network(simulation_params["I"],

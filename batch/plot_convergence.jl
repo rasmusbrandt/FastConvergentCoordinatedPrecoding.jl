@@ -1,14 +1,13 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# plot_rho.jl
+# plot_convergence.jl
 #
-# Plots rho curves.
+# Plots convergence curves.
 ##########################################################################
 
-include("../../src/MGRegularizedWSR.jl")
+include("../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using LaTeXStrings
 
 ##########################################################################
 # Load data
@@ -37,9 +36,8 @@ plot_params = [
     ],
 
     "axes" => [
-        :xlabel => L"\rho",
+        :xlabel => "Iterations",
         :ylabel => "Sum rate [bits/s/Hz]",
-        :xscale => "log",
     ],
 
     "legend" => [
@@ -55,6 +53,18 @@ plot_params = [
 
         "NuclearNormHeuristic" => [
             ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
+        ],
+
+        "Papailiopoulos2011_RCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
+        ],
+
+        "Du2013_ReweightedRCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM" ]),
+        ],
+
+        "Du2013_ReweightedRCRMl2Reg" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg" ]),
         ],
 
         "Shi2011_WMMSE" => [
@@ -77,6 +87,6 @@ plot_params = [
 # Plot it
 for file_name in parsed_args["file_names"]
     data = load(file_name)
-    processed_results = postprocess(data["raw_results"], data["simulation_params"], plot_params)
-    plot(processed_results, data["simulation_params"], plot_params)
+    processed_results = postprocess_precoding_convergence(data["raw_results"], data["simulation_params"], plot_params)
+    plot_precoding_convergence(processed_results, data["simulation_params"], plot_params)
 end

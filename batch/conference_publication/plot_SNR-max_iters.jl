@@ -28,7 +28,7 @@ postprocess_params = [
             ("logdet_rates",),
         ],
 
-        "Gomadam2008_MaxSINR" => [
+        "Du2013_ReweightedRCRM" => [
             ("logdet_rates",),
         ],
     ],
@@ -58,9 +58,9 @@ ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g"
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,3], color="b", linestyle="-", label=L"WMMSE ($L_\text{OTA} = 3$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,2], color="b", linestyle="--", label=L"WMMSE ($L_\text{OTA} = 2$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle=":", label=L"WMMSE ($L_\text{OTA} = 1$)")
-ax[:plot](xvals, results_mean["Gomadam2008_MaxSINR"]["logdet_rates"][:,3], color="r", linestyle="-", label=L"MaxSINR ($L_\text{OTA} = 3$)")
-ax[:plot](xvals, results_mean["Gomadam2008_MaxSINR"]["logdet_rates"][:,2], color="r", linestyle="--", label=L"MaxSINR ($L_\text{OTA} = 2$)")
-ax[:plot](xvals, results_mean["Gomadam2008_MaxSINR"]["logdet_rates"][:,1], color="r", linestyle=":", label=L"MaxSINR ($L_\text{OTA} = 1$)")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,3], color="r", linestyle="-", label=L"Reweighted RCRM ($L_\text{OTA} = 3$)")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,2], color="r", linestyle="--", label=L"Reweighted RCRM ($L_\text{OTA} = 2$)")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle=":", label=L"Reweighted RCRM ($L_\text{OTA} = 1$)")
 
 ax[:set_ylim](0, 35)
 
@@ -75,4 +75,4 @@ PyPlot.setp(legend_frame, linewidth=0.5)
 
 ##########################################################################
 # Write file
-fig[:savefig]("SNR-max_iters.pdf")
+fig[:savefig]("SNR-max_iters.eps")

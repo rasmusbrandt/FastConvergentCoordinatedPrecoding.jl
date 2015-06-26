@@ -26,6 +26,7 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        Du2013_ReweightedRCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -35,7 +36,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 3,
 
-        "rho" => 1e-2,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, 0:3:30),

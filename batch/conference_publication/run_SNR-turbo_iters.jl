@@ -20,12 +20,12 @@ simulation_params = [
     "simulation_name" => "SNR-turbo_iters",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "d" => 1,
-    "Ndrops" => 100, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
         Shi2011_WMMSE,
-        Gomadam2008_MaxSINR,
+        Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
     "aux_precoding_params" => [
@@ -36,7 +36,7 @@ simulation_params = [
         "rho" => 10.,
         "delta" => 1.,
     ],
-    "independent_variable" => (set_transmit_powers_dBm!, -10:30),
+    "independent_variable" => (set_transmit_powers_dBm!, -10:5:30),
     "aux_independent_variables" => [
         ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 2, 3]),
     ]

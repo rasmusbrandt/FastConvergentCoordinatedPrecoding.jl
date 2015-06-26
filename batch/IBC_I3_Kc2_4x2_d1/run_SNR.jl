@@ -21,11 +21,12 @@ simulation_params = [
     "simulation_name" => "SNR_$(start_time)",
     "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 20, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
+        Du2013_ReweightedRCRM,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -35,7 +36,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 3,
 
-        "rho" => 3e-2,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, 0:3:30),

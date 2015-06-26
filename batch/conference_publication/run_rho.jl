@@ -26,7 +26,7 @@ simulation_params = [
         LogDetHeuristic,
 
         Shi2011_WMMSE,
-        Gomadam2008_MaxSINR,
+        Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
     "aux_precoding_params" => [
@@ -37,7 +37,7 @@ simulation_params = [
 
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-2, 4, 100)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-2, 4, 10)),
 ]
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],

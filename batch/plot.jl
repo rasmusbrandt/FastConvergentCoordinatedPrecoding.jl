@@ -1,14 +1,13 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# plot_rho.jl
+# plot.jl
 #
-# Plots rho curves.
+# Plots curves.
 ##########################################################################
 
-include("../../src/MGRegularizedWSR.jl")
+include("../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using LaTeXStrings
 
 ##########################################################################
 # Load data
@@ -37,24 +36,33 @@ plot_params = [
     ],
 
     "axes" => [
-        :xlabel => L"\rho",
         :ylabel => "Sum rate [bits/s/Hz]",
-        :xscale => "log",
     ],
 
     "legend" => [
         :loc => "best",
-        :fontsize => 8,
+        :fontsize => 6,
     ],
 
     "methods" => [
         "LogDetHeuristic" => [
             ("logdet_rates", [ :color => "g", :linestyle => "-", :label => "LogDetHeuristic" ]),
-            ("utilities", [ :color => "g", :linestyle => "--",  :label => "LogDetHeuristic (utilities)" ]),
         ],
 
         "NuclearNormHeuristic" => [
             ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
+        ],
+
+        "Papailiopoulos2011_RCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
+        ],
+
+        "Du2013_ReweightedRCRM" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM" ]),
+        ],
+
+        "Du2013_ReweightedRCRMl2Reg" => [
+            ("logdet_rates", [ :color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg" ]),
         ],
 
         "Shi2011_WMMSE" => [

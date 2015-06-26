@@ -26,7 +26,7 @@ simulation_params = [
         LogDetHeuristic,
 
         Shi2011_WMMSE,
-        Gomadam2008_MaxSINR,
+        Du2013_ReweightedRCRM,
     ],
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
@@ -43,7 +43,7 @@ network =
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
         no_streams=simulation_params["d"])
-raw_results, _ = simulate_precoding_convergence(network, simulation_params)
+raw_results = simulate_precoding_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",

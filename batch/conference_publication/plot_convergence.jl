@@ -29,7 +29,7 @@ postprocess_params = [
             ("logdet_rates",),
         ],
 
-        "Gomadam2008_MaxSINR" => [
+        "Du2013_ReweightedRCRM" => [
             ("logdet_rates",),
         ],
     ],
@@ -56,7 +56,7 @@ xvals = (1:data["simulation_params"]["aux_precoding_params"]["max_iters"]) - 1 #
 ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle="-", label="TurboCP (rate)")
 ax[:plot](xvals, results_mean["LogDetHeuristic"]["utilities"][:,1], color="g", linestyle="", marker=".", label="TurboCP (objective)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE")
-ax[:plot](xvals, results_mean["Gomadam2008_MaxSINR"]["logdet_rates"][:,1], color="r", linestyle="-", label="MaxSINR")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM")
 
 ax[:set_ylim](0, 30)
 
@@ -71,4 +71,4 @@ PyPlot.setp(legend_frame, linewidth=0.5)
 
 ##########################################################################
 # Write file
-fig[:savefig]("convergence.pdf")
+fig[:savefig]("convergence.eps")

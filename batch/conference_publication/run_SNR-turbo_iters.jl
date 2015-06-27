@@ -20,7 +20,7 @@ simulation_params = [
     "simulation_name" => "SNR-turbo_iters",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 100, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 

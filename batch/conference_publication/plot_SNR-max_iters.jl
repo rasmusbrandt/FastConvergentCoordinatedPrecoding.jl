@@ -13,27 +13,7 @@ using LaTeXStrings
 ##########################################################################
 # Load data
 using HDF5, JLD
-data = load("SNR-max_iters.jld")
-
-##########################################################################
-# Perform post processing
-postprocess_params = [
-    "objective" => :sumrate,
-    "methods" => [
-        "LogDetHeuristic" => [
-            ("logdet_rates",),
-        ],
-
-        "Shi2011_WMMSE" => [
-            ("logdet_rates",),
-        ],
-
-        "Du2013_ReweightedRCRM" => [
-            ("logdet_rates",),
-        ],
-    ],
-]
-results, results_mean, results_var = postprocess(data["raw_results"], data["simulation_params"], postprocess_params)
+data = load("SNR-max_iters-merged.jld")
 
 ##########################################################################
 # Build figure
@@ -52,15 +32,15 @@ ax = fig[:add_axes]((0.11,0.15,0.95-0.11,0.95-0.15))
 
 xvals = data["simulation_params"]["independent_variable"][2]
 
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,3], color="g", linestyle="-", label=L"FastDCP ($L_\text{OTA} = 3$)")
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"FastDCP ($L_\text{OTA} = 2$)")
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"FastDCP ($L_\text{OTA} = 1$)")
-ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,3], color="b", linestyle="-", label=L"WMMSE ($L_\text{OTA} = 3$)")
-ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,2], color="b", linestyle="--", label=L"WMMSE ($L_\text{OTA} = 2$)")
-ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle=":", label=L"WMMSE ($L_\text{OTA} = 1$)")
-ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,3], color="r", linestyle="-", label=L"Reweighted RCRM ($L_\text{OTA} = 3$)")
-ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,2], color="r", linestyle="--", label=L"Reweighted RCRM ($L_\text{OTA} = 2$)")
-ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle=":", label=L"Reweighted RCRM ($L_\text{OTA} = 1$)")
+ax[:plot](xvals, data["results_mean"]["LogDetHeuristic"]["logdet_rates"][:,3], color="g", linestyle="-", label=L"FastDCP ($L_\text{OTA} = 3$)")
+ax[:plot](xvals, data["results_mean"]["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"FastDCP ($L_\text{OTA} = 2$)")
+ax[:plot](xvals, data["results_mean"]["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"FastDCP ($L_\text{OTA} = 1$)")
+ax[:plot](xvals, data["results_mean"]["Shi2011_WMMSE"]["logdet_rates"][:,3], color="b", linestyle="-", label=L"WMMSE ($L_\text{OTA} = 3$)")
+ax[:plot](xvals, data["results_mean"]["Shi2011_WMMSE"]["logdet_rates"][:,2], color="b", linestyle="--", label=L"WMMSE ($L_\text{OTA} = 2$)")
+ax[:plot](xvals, data["results_mean"]["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle=":", label=L"WMMSE ($L_\text{OTA} = 1$)")
+ax[:plot](xvals, data["results_mean"]["Du2013_ReweightedRCRM"]["logdet_rates"][:,3], color="r", linestyle="-", label=L"Reweighted RCRM ($L_\text{OTA} = 3$)")
+ax[:plot](xvals, data["results_mean"]["Du2013_ReweightedRCRM"]["logdet_rates"][:,2], color="r", linestyle="--", label=L"Reweighted RCRM ($L_\text{OTA} = 2$)")
+ax[:plot](xvals, data["results_mean"]["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle=":", label=L"Reweighted RCRM ($L_\text{OTA} = 1$)")
 
 ax[:set_ylim](0, 25)
 

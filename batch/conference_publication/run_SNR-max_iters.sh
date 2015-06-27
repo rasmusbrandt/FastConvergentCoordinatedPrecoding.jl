@@ -1,0 +1,11 @@
+#!/bin/bash
+./run_SNR-max_iters-s0.jl
+./run_SNR-max_iters-s1.jl
+./run_SNR-max_iters-s2.jl
+./run_SNR-max_iters-s3.jl
+./run_SNR-max_iters-s4.jl
+./run_SNR-max_iters-s5.jl
+./run_SNR-max_iters-s6.jl
+./run_SNR-max_iters-s7.jl
+./run_SNR-max_iters-s8.jl
+./run_SNR-max_iters-s9.jl

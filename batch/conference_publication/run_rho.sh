@@ -1,0 +1,11 @@
+#!/bin/bash
+./run_rho-s0.jl
+./run_rho-s1.jl
+./run_rho-s2.jl
+./run_rho-s3.jl
+./run_rho-s4.jl
+./run_rho-s5.jl
+./run_rho-s6.jl
+./run_rho-s7.jl
+./run_rho-s8.jl
+./run_rho-s9.jl

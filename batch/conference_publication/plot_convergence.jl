@@ -32,6 +32,11 @@ postprocess_params = [
         "Du2013_ReweightedRCRM" => [
             ("logdet_rates",),
         ],
+
+        "Eigenprecoding" => [
+            ("intercell_tdma_logdet_rates",),
+            ("uncoord_logdet_rates",),
+        ],
     ],
 ]
 results, results_mean, results_var = postprocess_precoding_convergence(data["raw_results"], data["simulation_params"], postprocess_params)
@@ -57,6 +62,8 @@ ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g"
 ax[:plot](xvals, results_mean["LogDetHeuristic"]["utilities"][:,1], color="g", linestyle="", marker=".", label="TurboCP (objective)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE")
 ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM")
+ax[:plot](xvals, results_mean["Eigenprecoding"]["intercell_tdma_logdet_rates"][:,1], color="c", linestyle="-", label="TDMA")
+ax[:plot](xvals, results_mean["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoord. transm.")
 
 ax[:set_ylim](0, 30)
 

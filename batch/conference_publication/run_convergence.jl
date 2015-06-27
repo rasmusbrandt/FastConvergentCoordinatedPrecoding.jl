@@ -18,8 +18,8 @@ srand(873232123)
 # Interference channel
 simulation_params = [
     "simulation_name" => "convergence",
-    "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
-    "P_dBm" => 20.,
+    "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
+    "P_dBm" => 30.,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
@@ -27,14 +27,15 @@ simulation_params = [
 
         Shi2011_WMMSE,
         Du2013_ReweightedRCRM,
+        Eigenprecoding
     ],
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 9,
-        "turbo_iters" => 2,
+        "turbo_iters" => 5,
 
-        "rho" => 10.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
 ]
@@ -49,3 +50,5 @@ println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)
+
+include("plot_convergence.jl")

@@ -19,17 +19,17 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 # Simulation
 simulation_params = [
     "simulation_name" => "convergence_$(start_time)",
-    "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
+    "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 2, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
-        # Papailiopoulos2011_RCRM,
-        # Du2013_ReweightedRCRM,
-        # Du2013_ReweightedRCRMl2Reg,
+        Papailiopoulos2011_RCRM,
+        Du2013_ReweightedRCRM,
+        Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -37,13 +37,13 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 20,
+        "max_iters" => 10,
 
-        "rho" => 10.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 5, 10]),
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 10]),
     ]
 ]
 network =

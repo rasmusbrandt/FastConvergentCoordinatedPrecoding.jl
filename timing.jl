@@ -17,7 +17,7 @@ start_time = strftime("%Y%m%dT%H%M%S", time())
 ##########################################################################
 # Performance test
 simulation_params = {
-    "I" => 3, "Kc" => 1, "N" => 2, "M" => 2,
+    "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
     "Ntest" => 100,
@@ -35,10 +35,10 @@ simulation_params = {
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 5,
-        "turbo_iters" => 3,
+        "max_iters" => 4,
+        "turbo_iters" => 4,
 
-        "rho" => 10.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
 }

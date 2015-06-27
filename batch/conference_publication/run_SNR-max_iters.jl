@@ -18,7 +18,7 @@ srand(863427123)
 # Interference channel
 simulation_params = [
     "simulation_name" => "SNR-max_iters",
-    "I" => 3, "Kc" => 2, "N" => 2, "M" => 4,
+    "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
@@ -31,9 +31,9 @@ simulation_params = [
     "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "turbo_iters" => 2,
+        "turbo_iters" => 4,
 
-        "rho" => 10.,
+        "rho" => 100.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, -10:5:30),
@@ -51,3 +51,5 @@ println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)
+
+include("plot_SNR-max_iters.jl")

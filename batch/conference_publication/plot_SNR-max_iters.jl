@@ -44,7 +44,7 @@ PyPlot.rc("text.latex", preamble="\\usepackage{amsmath}")
 PyPlot.rc("axes", linewidth=0.5, labelsize=8)
 PyPlot.rc("xtick", labelsize=8)
 PyPlot.rc("ytick", labelsize=8)
-PyPlot.rc("legend", fancybox=true, fontsize=6)
+PyPlot.rc("legend", fancybox=true, fontsize=5)
 PyPlot.rc("figure", figsize=(3.50,2.16), dpi=125)
 
 fig = PyPlot.figure()

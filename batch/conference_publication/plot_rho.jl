@@ -58,11 +58,13 @@ ax = fig[:add_axes]((0.11,0.15,0.95-0.11,0.95-0.15))
 
 xvals = data["simulation_params"]["independent_variable"][2]
 
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle="-", label="TurboCP")
-ax[:plot](xvals, results_mean["Eigenprecoding"]["intercell_tdma_logdet_rates"][:,1], color="c", linestyle="-", label="TDMA")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,3], color="g", linestyle="-", label=L"TurboCP ($L_\text{turbo} = 4$)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"TurboCP ($L_\text{turbo} = 2$)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"TurboCP ($L_\text{turbo} = 1$)")
+# ax[:plot](xvals, results_mean["Eigenprecoding"]["intercell_tdma_logdet_rates"][:,1], color="c", linestyle="-", label="TDMA")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE")
 ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM")
-ax[:plot](xvals, results_mean["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoordinated transmission")
+# ax[:plot](xvals, results_mean["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoordinated transmission")
 
 ax[:set_xscale]("log")
 ax[:set_ylim](0, 25)

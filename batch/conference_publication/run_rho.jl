@@ -52,5 +52,3 @@ println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",
      "simulation_params", clean_simulation_params_for_jld(simulation_params),
      "raw_results", raw_results)
-
-include("plot_rho.jl")

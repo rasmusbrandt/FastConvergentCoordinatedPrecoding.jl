@@ -58,10 +58,10 @@ ax = fig[:add_axes]((0.11,0.15,0.95-0.11,0.95-0.15))
 
 xvals = (1:data["simulation_params"]["aux_precoding_params"]["max_iters"]) - 1 # minus one due to the definition of 'over-the-air iterations'
 
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle="-", label="TurboCP (rate)")
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["utilities"][:,1], color="g", linestyle="", marker=".", label="TurboCP (objective)")
-ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE")
-ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle="-", label="FastDCP (rate)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["utilities"][:,1], color="g", linestyle="", marker=".", label="FastDCP (objective)")
+ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle="-", label="WMMSE [7]")
+ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle="-", label="Reweighted RCRM [11]")
 ax[:plot](xvals, results_mean["Eigenprecoding"]["intercell_tdma_logdet_rates"][:,1], color="c", linestyle="-", label="TDMA")
 ax[:plot](xvals, results_mean["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoord. transm.")
 

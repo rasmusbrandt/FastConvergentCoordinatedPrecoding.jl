@@ -52,9 +52,9 @@ ax = fig[:add_axes]((0.11,0.15,0.95-0.11,0.95-0.15))
 
 xvals = data["simulation_params"]["independent_variable"][2]
 
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,3], color="g", linestyle="-", label=L"TurboCP ($L_\text{OTA} = 3$)")
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"TurboCP ($L_\text{OTA} = 2$)")
-ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"TurboCP ($L_\text{OTA} = 1$)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,3], color="g", linestyle="-", label=L"FastDCP ($L_\text{OTA} = 3$)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,2], color="g", linestyle="--", label=L"FastDCP ($L_\text{OTA} = 2$)")
+ax[:plot](xvals, results_mean["LogDetHeuristic"]["logdet_rates"][:,1], color="g", linestyle=":", label=L"FastDCP ($L_\text{OTA} = 1$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,3], color="b", linestyle="-", label=L"WMMSE ($L_\text{OTA} = 3$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,2], color="b", linestyle="--", label=L"WMMSE ($L_\text{OTA} = 2$)")
 ax[:plot](xvals, results_mean["Shi2011_WMMSE"]["logdet_rates"][:,1], color="b", linestyle=":", label=L"WMMSE ($L_\text{OTA} = 1$)")
@@ -62,7 +62,7 @@ ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,3], col
 ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,2], color="r", linestyle="--", label=L"Reweighted RCRM ($L_\text{OTA} = 2$)")
 ax[:plot](xvals, results_mean["Du2013_ReweightedRCRM"]["logdet_rates"][:,1], color="r", linestyle=":", label=L"Reweighted RCRM ($L_\text{OTA} = 1$)")
 
-ax[:set_ylim](0, 35)
+ax[:set_ylim](0, 25)
 
 ax[:set_xlabel]("Signal-to-noise ratio [dB]")
 ax[:set_ylabel]("Sum rate [bits/s/Hz]")

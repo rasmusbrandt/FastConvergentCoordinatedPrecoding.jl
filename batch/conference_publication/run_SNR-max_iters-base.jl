@@ -28,7 +28,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "turbo_iters" => 4,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, -10:4:30),

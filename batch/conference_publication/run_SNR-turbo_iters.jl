@@ -20,7 +20,7 @@ simulation_params = [
     "simulation_name" => "SNR-turbo_iters",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
-    "Ndrops" => 100, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
@@ -33,7 +33,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 4,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "independent_variable" => (set_transmit_powers_dBm!, -10:5:30),

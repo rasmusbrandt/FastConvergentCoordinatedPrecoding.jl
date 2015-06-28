@@ -21,7 +21,7 @@ simulation_params = [
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 100, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
@@ -35,7 +35,7 @@ simulation_params = [
         "max_iters" => 9,
         "turbo_iters" => 5,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
 ]

@@ -41,7 +41,7 @@ ax[:plot](xvals, data["results_mean"]["Du2013_ReweightedRCRM"]["logdet_rates"][:
 # ax[:plot](xvals, data["results_mean"]["Eigenprecoding"]["uncoord_logdet_rates"][:,1], color="k", linestyle="-", label="Uncoordinated transmission")
 
 ax[:set_xscale]("log")
-ax[:set_ylim](0, 25)
+ax[:set_ylim](0, 26)
 
 ax[:set_xlabel](L"Regularization parameter $\rho$")
 ax[:set_ylabel]("Sum rate [bits/s/Hz]")

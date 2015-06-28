@@ -16,7 +16,7 @@ simulation_params = [
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 50, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
@@ -36,7 +36,7 @@ simulation_params = [
 
         "delta" => 1.,
     ],
-    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-1, 2, 20)),
+    "independent_variable" => ((n, v) -> set_aux_precoding_param!(n, v, "rho"), logspace(-1, 2, 100)),
     "aux_independent_variables" => [
         ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 2, 4]),
     ]

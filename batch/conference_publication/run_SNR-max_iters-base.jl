@@ -15,7 +15,7 @@ using HDF5, JLD
 simulation_params = [
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
-    "Ndrops" => 50, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 

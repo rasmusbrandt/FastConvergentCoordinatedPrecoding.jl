@@ -16,10 +16,15 @@ simulation_params = [
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 100, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
+        Shi2011_WMMSE,
+        Du2013_ReweightedRCRM,
+        Eigenprecoding
+    ],
+    "dont_sweep_precoding_methods" => [
         Shi2011_WMMSE,
         Du2013_ReweightedRCRM,
         Eigenprecoding

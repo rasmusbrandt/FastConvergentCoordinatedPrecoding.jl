@@ -27,9 +27,10 @@ simulation_params = [
         LogDetHeuristic,
         # NuclearNormHeuristic,
 
-        Papailiopoulos2011_RCRM,
-        Du2013_ReweightedRCRM,
-        Du2013_ReweightedRCRMl2Reg,
+        Ghauch2015_Turbo,
+        # Papailiopoulos2011_RCRM,
+        # Du2013_ReweightedRCRM,
+        # Du2013_ReweightedRCRMl2Reg,
         Shi2011_WMMSE,
         Gomadam2008_MaxSINR,
         Eigenprecoding
@@ -39,7 +40,7 @@ simulation_params = [
         "stop_crit" => 0.,
         "max_iters" => 10,
 
-        "rho" => 100.,
+        "rho" => 10.,
         "delta" => 1.,
     ],
     "aux_independent_variables" => [

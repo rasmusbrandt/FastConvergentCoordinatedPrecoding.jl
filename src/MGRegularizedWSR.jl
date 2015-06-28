@@ -15,13 +15,16 @@ export
     LogDetHeuristic, NuclearNormHeuristic,
 
     # baselines
+    Ghauch2015_Turbo,
     Papailiopoulos2011_RCRM,
     Du2013_ReweightedRCRM,
     Du2013_ReweightedRCRMl2Reg
 
-include("precoding/GeneralizedRCRM.jl")
 include("precoding/LogDetHeuristic.jl")
 include("precoding/NuclearNormHeuristic.jl")
+
+include("precoding/Ghauch2015_Turbo.jl")
+include("precoding/GeneralizedRCRM.jl")
 
 ##########################################################################
 # Logging defaults

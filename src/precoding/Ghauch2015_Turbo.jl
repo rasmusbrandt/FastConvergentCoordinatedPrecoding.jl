@@ -174,7 +174,7 @@ function Ghauch2015_lemma1(theta, T, Q, zeta, aux_params)
 
     # Bounds
     mu_lower = -minimum(Y_eigen_values) + 1e-10 # fudge a bit so we don't get indefinite matrix
-    mu_upper = vecnorm(G)/sqrt(zeta)
+    mu_upper = vecnorm(G)/sqrt(abs(zeta))
 
     # Bisect
     iters = 0

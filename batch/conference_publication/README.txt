@@ -1,0 +1,1 @@
+Mosek has some form of memory leak, so therefore I have split up the simulations into 10 discrete files. For the submission results, I ran the script on delphi (VPS on DigitalOcean), as well as on the MacBook. I then combined the results, such that I got 200 independent Monte Carlo realizations. I added a single digit to the initial seeds for the PRNGs in the simulation scripts. 

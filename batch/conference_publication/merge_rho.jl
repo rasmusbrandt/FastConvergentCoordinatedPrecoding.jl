@@ -31,7 +31,7 @@ postprocess_params = [
 
 ##########################################################################
 # Load data
-sim_names = [ "rho-$n.jld" for n = 0:9 ]
+sim_names = vcat([ "rho-$n.jld" for n = 0:9 ], [ "rho-W$n.jld" for n = 0:9 ])
 
 # Load first
 println("Loading from $(sim_names[1])")

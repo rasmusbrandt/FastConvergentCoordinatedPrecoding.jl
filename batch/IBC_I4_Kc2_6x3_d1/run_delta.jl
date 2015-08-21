@@ -46,7 +46,7 @@ network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
         transmit_power=10^(simulation_params["P_dBm"]/10),
-        no_streams=simulation_params["d"])
+        num_streams=simulation_params["d"])
 raw_results, _ = simulate(network, simulation_params)
 
 println("-- Saving $(simulation_params["simulation_name"]) results")

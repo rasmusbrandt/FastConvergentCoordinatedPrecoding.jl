@@ -7,10 +7,10 @@ end
 function Ghauch2015_Turbo(channel, network)
     assignment = get_assignment(network)
 
-    K = get_no_MSs(network)
+    K = get_num_MSs(network)
     Ps = get_transmit_powers(network)
     sigma2s = get_receiver_noise_powers(network)
-    ds = get_no_streams(network); max_d = maximum(ds)
+    ds = get_num_streams(network); max_d = maximum(ds)
     alphas = get_user_priorities(network)
     aux_params = get_aux_precoding_params(network)
 
@@ -58,7 +58,7 @@ function Ghauch2015_Turbo(channel, network)
             conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
             if conv_crit < aux_params["stop_crit"]
                 Lumberjack.debug("Ghauch2015_Turbo converged.",
-                    [ :no_iters => iters,
+                    [ :num_iters => iters,
                       :final_objective => objective[end],
                       :conv_crit => conv_crit,
                       :stop_crit => aux_params["stop_crit"],
@@ -75,7 +75,7 @@ function Ghauch2015_Turbo(channel, network)
     end
     if iters == aux_params["max_iters"]
         Lumberjack.debug("Ghauch2015_Turbo did NOT converge.",
-            [ :no_iters => iters,
+            [ :num_iters => iters,
               :final_objective => objective[end],
               :conv_crit => conv_crit,
               :stop_crit => aux_params["stop_crit"],

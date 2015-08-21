@@ -25,7 +25,7 @@ postprocess_params = [
 
 ##########################################################################
 # Load data
-sim_names = [ "SNR-max_iters-$n.jld" for n = 0:9 ]
+sim_names = vcat([ "SNR-max_iters-$n.jld" for n = 0:9 ], [ "SNR-max_iters-W$n.jld" for n = 0:9 ])
 
 # Load first
 println("Loading from $(sim_names[1])")

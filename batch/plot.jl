@@ -13,7 +13,7 @@ using MGRegularizedWSR, CoordinatedPrecoding
 # Load data
 #
 # Do this before loading other code, otherwise the JLD module might crash!
-using HDF5, JLD, ArgParse
+using JLD, ArgParse
 s = ArgParseSettings()
 @add_arg_table s begin
     "file_names"
@@ -28,7 +28,7 @@ parsed_args = parse_args(s)
 plot_params = [
     "plot_name" => "",
 
-    "objective" => :sumrate,
+    "objective" => :sum,
 
     "figure" => [
         :figsize => (8,5),

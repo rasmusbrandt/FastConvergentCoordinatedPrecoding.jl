@@ -2,12 +2,12 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using HDF5, JLD
+using JLD
 
 ##########################################################################
 # Postprocessing parameters
 postprocess_params = [
-    "objective" => :sumrate,
+    "objective" => :sum,
     "methods" => [
         "LogDetHeuristic" => [
             ("logdet_rates",),

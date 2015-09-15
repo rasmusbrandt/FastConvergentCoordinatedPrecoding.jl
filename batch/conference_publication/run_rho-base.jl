@@ -8,7 +8,7 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using HDF5, JLD
+using JLD
 
 ##########################################################################
 # Interference channel
@@ -24,7 +24,7 @@ simulation_params = [
         Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
-    "dont_sweep_precoding_methods" => [
+    "precoding_methods_nosweep" => [
         Shi2011_WMMSE,
         Du2013_ReweightedRCRM,
         Eigenprecoding

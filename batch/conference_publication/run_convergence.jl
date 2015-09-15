@@ -8,7 +8,7 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using HDF5, JLD
+using JLD
 
 ##########################################################################
 # General settings

@@ -12,13 +12,13 @@ using LaTeXStrings
 
 ##########################################################################
 # Load data
-using HDF5, JLD
+using JLD
 data = load("SNR-turbo_iters.jld")
 
 ##########################################################################
 # Perform post processing
 postprocess_params = [
-    "objective" => :sumrate,
+    "objective" => :sum,
     "methods" => [
         "LogDetHeuristic" => [
             ("logdet_rates",),

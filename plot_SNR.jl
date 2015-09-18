@@ -13,7 +13,7 @@ using MGRegularizedWSR, CoordinatedPrecoding
 # Load data
 #
 # Do this before loading other code, otherwise the JLD module might crash!
-using JLD, ArgParse
+using JLD, Compat, ArgParse
 s = ArgParseSettings()
 @add_arg_table s begin
     "file_names"
@@ -25,7 +25,7 @@ parsed_args = parse_args(s)
 
 ##########################################################################
 # Plot parameters
-plot_params = [
+plot_params = @Compat.Dict(
     "plot_name" => "",
 
     "objective" => :sum,
@@ -35,57 +35,57 @@ plot_params = [
         :dpi => 125,
     ],
 
-    "axes" => [
+    "axes" => @Compat.Dict(
         :xlabel => "Transmit power [dBm]",
         :ylabel => "Sum rate [bits/s/Hz]",
-    ],
+    ),
 
-    "legend" => [
+    "legend" => @Compat.Dict(
         :loc => "best",
         :fontsize => 4,
-    ],
+    ),
 
     "methods" => [
         "LogDetHeuristic" => [
-            ("logdet_rates", [ :color => "g", :linestyle => "-", :label => "LogDetHeuristic" ]),
-            ("utilities", [ :color => "g", :linestyle => "--",  :label => "LogDetHeuristic (utilities)" ]),
+            ("logdet_rates", @Compat.Dict(:color => "g", :linestyle => "-", :label => "LogDetHeuristic")),
+            ("utilities", @Compat.Dict(:color => "g", :linestyle => "--",  :label => "LogDetHeuristic (utilities)")),
         ],
 
         "NuclearNormHeuristic" => [
-            ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
+            ("logdet_rates", @Compat.Dict(:color => "y", :linestyle => ":", :label => "NuclearNormHeuristic")),
         ],
 
         "Ghauch2015_Turbo" => [
-            ("logdet_rates", [ :color => "SlateBlue", :linestyle => "-", :label => "Ghauch2015_Turbo" ]),
+            ("logdet_rates", @Compat.Dict(:color => "SlateBlue", :linestyle => "-", :label => "Ghauch2015_Turbo")),
         ],
 
         "Papailiopoulos2011_RCRM" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM")),
         ],
 
         "Du2013_ReweightedRCRM" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM")),
         ],
 
         "Du2013_ReweightedRCRMl2Reg" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg")),
         ],
 
         "Shi2011_WMMSE" => [
-            ("logdet_rates", [ :color => "b", :linestyle => "-", :label => "WMMSE" ]),
+            ("logdet_rates", @Compat.Dict(:color => "b", :linestyle => "-", :label => "WMMSE")),
         ],
 
         "Gomadam2008_MaxSINR" => [
-            ("logdet_rates", [ :color => "r", :linestyle => "-", :label => "MaxSINR" ]),
+            ("logdet_rates", @Compat.Dict(:color => "r", :linestyle => "-", :label => "MaxSINR")),
         ],
 
         "Eigenprecoding" => [
-            ("intercell_tdma_logdet_rates", [ :color => "c", :linestyle => "-", :label => "TDMA" ]),
-            ("intracell_tdma_logdet_rates", [ :color => "c", :linestyle => "-.",  :label => "Intracell TDMA" ]),
-            ("uncoord_logdet_rates", [ :color => "k", :linestyle => "-", :label => "Uncoord. transm." ]),
+            ("intercell_tdma_logdet_rates", @Compat.Dict(:color => "c", :linestyle => "-", :label => "TDMA")),
+            ("intracell_tdma_logdet_rates", @Compat.Dict(:color => "c", :linestyle => "-.",  :label => "Intracell TDMA")),
+            ("uncoord_logdet_rates", @Compat.Dict(:color => "k", :linestyle => "-", :label => "Uncoord. transm.")),
         ],
     ]
-]
+)
 
 ##########################################################################
 # Plot it

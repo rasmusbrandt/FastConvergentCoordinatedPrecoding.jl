@@ -25,61 +25,61 @@ parsed_args = parse_args(s)
 
 ##########################################################################
 # Plot parameters
-plot_params = [
+plot_params = @Compat.Dict(
     "plot_name" => "",
 
     "objective" => :sum,
 
-    "figure" => [
+    "figure" => @Compat.Dict(
         :figsize => (8,5),
         :dpi => 125,
-    ],
+    ),
 
-    "axes" => [
+    "axes" => @Compat.Dict(
         :ylabel => "Sum rate [bits/s/Hz]",
-    ],
+    ),
 
-    "legend" => [
+    "legend" => @Compat.Dict(
         :loc => "best",
         :fontsize => 6,
-    ],
+    ),
 
     "methods" => [
         "LogDetHeuristic" => [
-            ("logdet_rates", [ :color => "g", :linestyle => "-", :label => "LogDetHeuristic" ]),
+            ("logdet_rates", @Compat.Dict(:color => "g", :linestyle => "-", :label => "LogDetHeuristic")),
         ],
 
         "NuclearNormHeuristic" => [
-            ("logdet_rates", [ :color => "y", :linestyle => ":", :label => "NuclearNormHeuristic" ]),
+            ("logdet_rates", @Compat.Dict(:color => "y", :linestyle => ":", :label => "NuclearNormHeuristic")),
         ],
 
         "Papailiopoulos2011_RCRM" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "-", :label => "Papailiopoulos2011_RCRM")),
         ],
 
         "Du2013_ReweightedRCRM" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "--", :label => "Du2013_ReweightedRCRM")),
         ],
 
         "Du2013_ReweightedRCRMl2Reg" => [
-            ("logdet_rates", [ :color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg" ]),
+            ("logdet_rates", @Compat.Dict(:color => "m", :linestyle => "-.", :label => "Du2013_ReweightedRCRMl2Reg")),
         ],
 
         "Shi2011_WMMSE" => [
-            ("logdet_rates", [ :color => "b", :linestyle => "-", :label => "WMMSE" ]),
+            ("logdet_rates", @Compat.Dict(:color => "b", :linestyle => "-", :label => "WMMSE")),
         ],
 
         "Gomadam2008_MaxSINR" => [
-            ("logdet_rates", [ :color => "r", :linestyle => "-", :label => "MaxSINR" ]),
+            ("logdet_rates", @Compat.Dict(:color => "r", :linestyle => "-", :label => "MaxSINR")),
         ],
 
         "Eigenprecoding" => [
-            ("intercell_tdma_logdet_rates", [ :color => "c", :linestyle => "-", :label => "TDMA" ]),
-            ("intracell_tdma_logdet_rates", [ :color => "c", :linestyle => "-.",  :label => "Intracell TDMA" ]),
-            ("uncoord_logdet_rates", [ :color => "k", :linestyle => "-", :label => "Uncoord. transm." ]),
+            ("intercell_tdma_logdet_rates", @Compat.Dict(:color => "c", :linestyle => "-", :label => "TDMA")),
+            ("intracell_tdma_logdet_rates", @Compat.Dict(:color => "c", :linestyle => "-.",  :label => "Intracell TDMA")),
+            ("uncoord_logdet_rates", @Compat.Dict(:color => "k", :linestyle => "-", :label => "Uncoord. transm.")),
         ],
     ]
-]
+)
 
 ##########################################################################
 # Plot it

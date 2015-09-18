@@ -2,13 +2,13 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using JLD
+using JLD, Compat
 
 ##########################################################################
 # Postprocessing parameters
-postprocess_params = [
+postprocess_params = @Compat.Dict(
     "objective" => :sum,
-    "methods" => [
+    "methods" => @Compat.Dict(
         "LogDetHeuristic" => [
             ("logdet_rates",),
         ],
@@ -26,8 +26,8 @@ postprocess_params = [
             ("intracell_tdma_logdet_rates",),
             ("uncoord_logdet_rates",),
         ],
-    ],
-]
+    ),
+)
 
 ##########################################################################
 # Load data

@@ -8,7 +8,7 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using JLD
+using JLD, Compat
 
 ##########################################################################
 # General settings
@@ -16,7 +16,7 @@ srand(873232123)
 
 ##########################################################################
 # Interference channel
-simulation_params = [
+simulation_params = @Compat.Dict(
     "simulation_name" => "convergence",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
@@ -29,7 +29,7 @@ simulation_params = [
         Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
-    "aux_precoding_params" => [
+    "aux_precoding_params" => @Compat.Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 9,
@@ -37,8 +37,8 @@ simulation_params = [
 
         "rho" => 10.,
         "delta" => 1.,
-    ],
-]
+    ),
+)
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],

@@ -13,7 +13,7 @@ using JLD
 ##########################################################################
 # General settings
 srand(867123)
-start_time = strftime("%Y%m%dT%H%M%S", time())
+start_time = Libc.strftime("%Y%m%dT%H%M%S", time())
 
 ##########################################################################
 # Interference channel

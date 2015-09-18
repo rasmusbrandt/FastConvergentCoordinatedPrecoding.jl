@@ -8,15 +8,16 @@
 
 include("src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
+using Compat
 
 ##########################################################################
 # General settings
 srand(8071232234)
-start_time = strftime("%Y%m%dT%H%M%S", time())
+start_time = Libc.strftime("%Y%m%dT%H%M%S", time())
 
 ##########################################################################
 # Performance test
-simulation_params = {
+simulation_params = @Compat.Dict(
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
@@ -32,7 +33,7 @@ simulation_params = {
         Gomadam2008_MaxSINR,
         Eigenprecoding
     ],
-    "aux_precoding_params" => [
+    "aux_precoding_params" => @Compat.Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 4,
@@ -40,8 +41,8 @@ simulation_params = {
 
         "rho" => 100.,
         "delta" => 1.,
-    ],
-}
+    ),
+)
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],

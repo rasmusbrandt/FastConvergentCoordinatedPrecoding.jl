@@ -8,11 +8,11 @@
 
 require("../../src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using JLD
+using JLD, Compat
 
 ##########################################################################
 # Interference channel
-simulation_params = [
+simulation_params = @Compat.Dict(
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
     "Ndrops" => 10, "Nsim" => 1,
@@ -23,16 +23,16 @@ simulation_params = [
         Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
-    "aux_precoding_params" => [
+    "aux_precoding_params" => @Compat.Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 4,
 
         "rho" => 10.,
         "delta" => 1.,
-    ],
+    ),
     "independent_variable" => (set_transmit_powers_dBm!, -10:4:30),
     "aux_independent_variables" => [
         ((n, v) -> set_aux_precoding_param!(n, v, "max_iters"), [2, 3, 4]),
     ]
-]
+)

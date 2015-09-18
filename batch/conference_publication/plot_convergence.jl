@@ -12,14 +12,14 @@ using LaTeXStrings
 
 ##########################################################################
 # Load data
-using JLD
+using JLD, Compat
 data = load("convergence.jld")
 
 ##########################################################################
 # Perform post processing
-postprocess_params = [
+postprocess_params = @Compat.Dict(
     "objective" => :sum,
-    "methods" => [
+    "methods" => @Compat.Dict(
         "LogDetHeuristic" => [
             ("logdet_rates",),
             ("utilities",),
@@ -37,8 +37,8 @@ postprocess_params = [
             ("intercell_tdma_logdet_rates",),
             ("uncoord_logdet_rates",),
         ],
-    ],
-]
+    ),
+)
 results, results_mean, results_var = postprocess_precoding_convergence(data["raw_results"], data["simulation_params"], postprocess_params)
 
 ##########################################################################

@@ -9,6 +9,7 @@ module MGRegularizedWSR
 
 using CoordinatedPrecoding
 import Lumberjack, Convex, Mosek
+using Compat
 
 export
     # proposed algorithms

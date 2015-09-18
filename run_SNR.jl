@@ -8,16 +8,16 @@
 
 include("src/MGRegularizedWSR.jl")
 using MGRegularizedWSR, CoordinatedPrecoding
-using JLD
+using JLD, Compat
 
 ##########################################################################
 # General settings
 srand(973472333)
-start_time = strftime("%Y%m%dT%H%M%S", time())
+start_time = Libc.strftime("%Y%m%dT%H%M%S", time())
 
 ##########################################################################
 # Simulation
-simulation_params = [
+simulation_params = @Compat.Dict(
     "simulation_name" => "SNR_$(start_time)",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
@@ -34,19 +34,19 @@ simulation_params = [
         Gomadam2008_MaxSINR,
         Eigenprecoding
     ],
-    "aux_precoding_params" => [
+    "aux_precoding_params" => @Compat.Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 4,
 
         "rho" => 10.,
         "delta" => 1.,
-    ],
+    ),
     "independent_variable" => (set_transmit_powers_dBm!, 0:10:30),
     "aux_independent_variables" => [
         ((n, v) -> set_aux_precoding_param!(n, v, "max_iters"), [2, 3, 4]),
     ]
-]
+)
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],

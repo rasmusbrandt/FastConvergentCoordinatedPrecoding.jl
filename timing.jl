@@ -20,7 +20,7 @@ simulation_params = @compat Dict(
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
-    "Ntest" => 100,
+    "Ntest" => 10,
     "precoding_methods" => [
         LogDetHeuristic,
         # NuclearNormHeuristic,

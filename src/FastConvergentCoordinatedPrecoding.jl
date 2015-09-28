@@ -37,4 +37,21 @@ let
     file = Lumberjack.add_truck(Lumberjack.LumberjackTruck("default.log", "info"), "default")
 end
 
+##########################################################################
+# Hermitian methods, previously from CoordinatedPrecoding.jl
+import Base: +, -, .*, logdet, diag
++(A::Hermitian{Complex128}, B::Hermitian{Complex128}) = Hermitian(A.S + B.S)
++(B::Matrix{Float64}, A::Hermitian{Complex128}) = +(A, B)
++(A::Hermitian{Complex128}, B::Matrix{Float64}) = A.S + B
++(A::Hermitian{Complex128}, B::Matrix{Complex128}) = A.S + B
+
+-(A::Hermitian{Complex128}, B::Matrix{Complex128}) = A.S - B
+-(B::Array{Complex128, 2}, A::Hermitian{Complex128}) = -(A, B)
+-(A::Hermitian{Complex128}, B::Matrix{Float64}) = A.S - B
+
+.*(a::Float64, B::Hermitian{Complex128}) = Hermitian(a.*B.S)
+
+logdet(A::Hermitian{Complex128}) = logdet(A.S)
+diag(A::Hermitian{Complex128}) = diag(A.S)
+
 end

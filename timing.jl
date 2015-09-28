@@ -6,8 +6,7 @@
 # Compares runtimes of different methods.
 ##########################################################################
 
-include("src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using Compat
 
 ##########################################################################
@@ -17,7 +16,7 @@ start_time = Libc.strftime("%Y%m%dT%H%M%S", time())
 
 ##########################################################################
 # Performance test
-simulation_params = @Compat.Dict(
+simulation_params = @compat Dict(
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "P_dBm" => 30.,
     "d" => 1,
@@ -33,7 +32,7 @@ simulation_params = @Compat.Dict(
         Gomadam2008_MaxSINR,
         Eigenprecoding
     ],
-    "aux_precoding_params" => @Compat.Dict(
+    "aux_precoding_params" => Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "max_iters" => 4,

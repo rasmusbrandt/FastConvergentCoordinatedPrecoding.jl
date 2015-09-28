@@ -1,11 +1,13 @@
 ##########################################################################
-# MGRegularizedWSR
+# FastConvergentCoordinatedPrecoding.jl
 #
-# Evaluation environment for the MGRegularizedWSR project
-# https://gitr.sys.kth.se/rabr5411/MGRegularizedWSR.jl
+# Evaluation environment for
+# R. Brandt, M. Bengtsson, "Fast-Convergent Distributed Coordinated Precoding
+# for TDD Multicell MIMO Systems", IEEE Int. Workshop Computational Advances
+# in Multi-Sensor Adaptive Process. (CAMSAP'15), 2015. To appear.
 ##########################################################################
 
-module MGRegularizedWSR
+module FastConvergentCoordinatedPrecoding
 
 using CoordinatedPrecoding
 import Lumberjack, Convex, Mosek

@@ -3,8 +3,8 @@ from fabric.api import *
 # Forward SSH keys for github
 env.forward_agent = True
 env.user = 'rabr5411'
-env.code_dir = '/home/rabr5411/sims/MGRegularizedWSR.jl'
-env.git_url = 'git@gitr.sys.kth.se:rabr5411/MGRegularizedWSR.jl.git'
+env.code_dir = '/home/rabr5411/sims/FastConvergentCoordinatedPrecoding.jl'
+env.git_url = 'git@gitr.sys.kth.se:rabr5411/FastConvergentCoordinatedPrecoding.jl.git'
 
 def delphi():
     env.hosts = 'delphi.uberwi.se'

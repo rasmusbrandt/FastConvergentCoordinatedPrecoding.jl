@@ -6,8 +6,7 @@
 # Performance as a function of transmit power.
 ##########################################################################
 
-include("src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using JLD, Compat
 
 ##########################################################################
@@ -17,7 +16,7 @@ start_time = Libc.strftime("%Y%m%dT%H%M%S", time())
 
 ##########################################################################
 # Simulation
-simulation_params = @Compat.Dict(
+simulation_params = @compat Dict(
     "simulation_name" => "SNR_$(start_time)",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
     "d" => 1,
@@ -34,7 +33,7 @@ simulation_params = @Compat.Dict(
         Gomadam2008_MaxSINR,
         Eigenprecoding
     ],
-    "aux_precoding_params" => @Compat.Dict(
+    "aux_precoding_params" => Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
         "turbo_iters" => 4,

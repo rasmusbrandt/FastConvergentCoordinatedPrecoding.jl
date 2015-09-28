@@ -1,27 +1,25 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_convergence.jl
+# run_SNR-turbo_iters.jl
 #
-# Convergence as a function of number of outer and turbo iterations.
+# Performance vs. SNR and turbo_iters
 ##########################################################################
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using JLD, Compat
 
 ##########################################################################
 # General settings
-srand(873232123)
+srand(8123123)
 
 ##########################################################################
 # Interference channel
-simulation_params = @Compat.Dict(
-    "simulation_name" => "convergence",
+simulation_params = [
+    "simulation_name" => "SNR-turbo_iters",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
-    "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 100, "Nsim" => 1,
+    "Ndrops" => 10, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
@@ -29,22 +27,24 @@ simulation_params = @Compat.Dict(
         Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
-    "aux_precoding_params" => @Compat.Dict(
+    "aux_precoding_params" => [
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 9,
-        "turbo_iters" => 5,
+        "max_iters" => 4,
 
         "rho" => 10.,
         "delta" => 1.,
-    ),
-)
+    ],
+    "independent_variable" => (set_transmit_powers_dBm!, -10:5:30),
+    "aux_independent_variables" => [
+        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 2, 4]),
+    ]
+]
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
-        transmit_power=10^(simulation_params["P_dBm"]/10),
         num_streams=simulation_params["d"])
-raw_results = simulate_precoding_convergence(network, simulation_params)
+raw_results, _ = simulate(network, simulation_params)
 
 println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",

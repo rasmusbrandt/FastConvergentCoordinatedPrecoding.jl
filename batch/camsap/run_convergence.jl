@@ -1,26 +1,26 @@
 #!/usr/bin/env julia
 
 ##########################################################################
-# run_SNR-turbo_iters.jl
+# run_convergence.jl
 #
-# Performance vs. SNR and turbo_iters
+# Convergence as a function of number of outer and turbo iterations.
 ##########################################################################
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using JLD, Compat
 
 ##########################################################################
 # General settings
-srand(8123123)
+srand(873232123)
 
 ##########################################################################
 # Interference channel
-simulation_params = [
-    "simulation_name" => "SNR-turbo_iters",
+simulation_params = @compat Dict(
+    "simulation_name" => "convergence",
     "I" => 6, "Kc" => 1, "N" => 2, "M" => 3,
+    "P_dBm" => 30.,
     "d" => 1,
-    "Ndrops" => 10, "Nsim" => 1,
+    "Ndrops" => 100, "Nsim" => 1,
     "precoding_methods" => [
         LogDetHeuristic,
 
@@ -28,24 +28,22 @@ simulation_params = [
         Du2013_ReweightedRCRM,
         Eigenprecoding
     ],
-    "aux_precoding_params" => [
+    "aux_precoding_params" => Dict(
         "initial_precoders" => "eigendirection",
         "stop_crit" => 0.,
-        "max_iters" => 4,
+        "max_iters" => 9,
+        "turbo_iters" => 5,
 
         "rho" => 10.,
         "delta" => 1.,
-    ],
-    "independent_variable" => (set_transmit_powers_dBm!, -10:5:30),
-    "aux_independent_variables" => [
-        ((n, v) -> set_aux_precoding_param!(n, v, "turbo_iters"), [1, 2, 4]),
-    ]
-]
+    ),
+)
 network =
     setup_interfering_broadcast_channel(simulation_params["I"],
         simulation_params["Kc"], simulation_params["N"], simulation_params["M"],
+        transmit_power=10^(simulation_params["P_dBm"]/10),
         num_streams=simulation_params["d"])
-raw_results, _ = simulate(network, simulation_params)
+raw_results = simulate_precoding_convergence(network, simulation_params)
 
 println("-- Saving $(simulation_params["simulation_name"]) results")
 save("$(simulation_params["simulation_name"]).jld",

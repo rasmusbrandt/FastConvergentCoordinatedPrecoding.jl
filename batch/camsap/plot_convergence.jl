@@ -6,8 +6,7 @@
 # Plots convergence curves.
 ##########################################################################
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################
@@ -17,9 +16,9 @@ data = load("convergence.jld")
 
 ##########################################################################
 # Perform post processing
-postprocess_params = @Compat.Dict(
+postprocess_params = @compat Dict(
     "objective" => :sum,
-    "methods" => @Compat.Dict(
+    "methods" => Dict(
         "LogDetHeuristic" => [
             ("logdet_rates",),
             ("utilities",),

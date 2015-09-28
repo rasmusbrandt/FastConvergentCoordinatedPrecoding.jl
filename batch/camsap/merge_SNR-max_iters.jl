@@ -1,14 +1,13 @@
 #!/usr/bin/env julia
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using JLD, Compat
 
 ##########################################################################
 # Postprocessing parameters
-postprocess_params = @Compat.Dict(
+postprocess_params = @compat Dict(
     "objective" => :sum,
-    "methods" => @Compat.Dict(
+    "methods" => Dict(
         "LogDetHeuristic" => [
             ("logdet_rates",),
         ],
@@ -20,18 +19,12 @@ postprocess_params = @Compat.Dict(
         "Du2013_ReweightedRCRM" => [
             ("logdet_rates",),
         ],
-
-        "Eigenprecoding" => [
-            ("intercell_tdma_logdet_rates",),
-            ("intracell_tdma_logdet_rates",),
-            ("uncoord_logdet_rates",),
-        ],
     ),
 )
 
 ##########################################################################
 # Load data
-sim_names = vcat([ "rho-$n.jld" for n = 0:9 ], [ "rho-W$n.jld" for n = 0:9 ])
+sim_names = vcat([ "SNR-max_iters-$n.jld" for n = 0:9 ], [ "SNR-max_iters-W$n.jld" for n = 0:9 ])
 
 # Load first
 println("Loading from $(sim_names[1])")
@@ -51,7 +44,7 @@ data = []
 results, results_mean, results_var = postprocess(raw_results, simulation_params, postprocess_params)
 
 println("-- Saving merged results")
-save("rho-merged.jld",
+save("SNR-max_iters-merged.jld",
      "simulation_params", simulation_params,
      "results", results,
      "results_mean", results_mean,

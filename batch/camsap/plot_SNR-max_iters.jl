@@ -6,8 +6,7 @@
 # Plots SNR curves with varying number of max_iters.
 ##########################################################################
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################

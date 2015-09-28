@@ -6,8 +6,7 @@
 # Plots rho curves.
 ##########################################################################
 
-require("../../src/MGRegularizedWSR.jl")
-using MGRegularizedWSR, CoordinatedPrecoding
+using FastConvergentCoordinatedPrecoding, CoordinatedPrecoding
 using LaTeXStrings
 
 ##########################################################################

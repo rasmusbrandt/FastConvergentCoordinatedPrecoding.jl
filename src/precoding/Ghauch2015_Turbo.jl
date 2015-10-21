@@ -58,7 +58,7 @@ function Ghauch2015_Turbo(channel, network)
             conv_crit = abs(objective[end] - objective[end-1])/abs(objective[end-1])
             if conv_crit < aux_params["stop_crit"]
                 Lumberjack.debug("Ghauch2015_Turbo converged.",
-                    @Compat.Dict(
+                    @compat Dict(
                         :num_iters => iters,
                         :final_objective => objective[end],
                         :conv_crit => conv_crit,
@@ -75,7 +75,7 @@ function Ghauch2015_Turbo(channel, network)
     end
     if iters == aux_params["max_iters"]
         Lumberjack.debug("Ghauch2015_Turbo did NOT converge.",
-            @Compat.Dict(
+            @compat Dict(
                 :num_iters => iters,
                 :final_objective => objective[end],
                 :conv_crit => conv_crit,

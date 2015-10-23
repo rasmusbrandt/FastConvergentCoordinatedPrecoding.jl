@@ -116,8 +116,8 @@ function update_MSs!(state::NuclearNormHeuristicState,
 
             # Receive filter
             Us = Convex.Variable(2*channel.Ns[k], ds[k])
-            MSE_term = Convex.sum_squares(cmat(sqrtm(full(Phi)))*Us) - 2*trace(Us'*cvec(F))
-            IntfNN = Convex.nuclear_norm(Q)
+            MSE_term = Convex.sumsquares(cmat(sqrtm(full(Phi)))*Us) - 2*trace(Us'*cvec(F))
+            IntfNN = Convex.nuclearnorm(Q)
             objective = MSE_term + aux_params["rho"]*IntfNN
             problem = Convex.minimize(objective, constraints)
             Convex.solve!(problem, aux_params["NuclearNormHeuristic:solver"])
@@ -164,8 +164,8 @@ function update_BSs!(state::NuclearNormHeuristicState,
             G = channel.H[k,i]'*state.U[k]*state.Y[k]
 
             Vs[k] = Convex.Variable(2*channel.Ms[i], ds[k])
-            objective += Convex.sum_squares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(cvec(G)'*Vs[k])
-            used_power += Convex.sum_squares(Vs[k])
+            objective += Convex.sumsquares(Gamma_ext_sqrtm*Vs[k]) - 2*trace(cvec(G)'*Vs[k])
+            used_power += Convex.sumsquares(Vs[k])
         end
         push!(constraints, used_power <= Ps[i])
     end
@@ -182,7 +182,7 @@ function update_BSs!(state::NuclearNormHeuristicState,
                 end
             end
 
-            user_IntfNN = Convex.nuclear_norm(Q)
+            user_IntfNN = Convex.nuclearnorm(Q)
 
             objective += aux_params["rho"]*user_IntfNN
         end

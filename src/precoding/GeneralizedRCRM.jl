@@ -121,12 +121,12 @@ function update_MSs!(state::GeneralizedRCRMState, channel::SinglecarrierChannel,
             real_offset += ds[l]; imag_offset += ds[l]
         end; end
         if reweight
-            objective = 0.5*Convex.nuclear_norm(state.Y_ext[k]*Q_ext)
+            objective = 0.5*Convex.nuclearnorm(state.Y_ext[k]*Q_ext)
         else
-            objective = 0.5*Convex.nuclear_norm(Q_ext)
+            objective = 0.5*Convex.nuclearnorm(Q_ext)
         end
         if l2_reg
-            objective += (1/aux_params["rho"])*Convex.sum_squares(Q_ext)
+            objective += (1/aux_params["rho"])*Convex.sumsquares(Q_ext)
         end
 
         # Effective channel and user constraint
@@ -134,7 +134,7 @@ function update_MSs!(state::GeneralizedRCRMState, channel::SinglecarrierChannel,
         S_r = Us_r'*F_r + Us_i'*F_i
         S_i = Us_r'*F_i - Us_i'*F_r
         S_ext = hvcat(2, S_r, -S_i, S_i, S_r)
-        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
+        push!(constraints, Convex.lambdamin(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
 
         # Solve local approximated RCRM optimization problem
         problem = Convex.minimize(objective, constraints)
@@ -179,12 +179,12 @@ function update_BSs!(state::GeneralizedRCRMState, channel::SinglecarrierChannel,
             real_offset += ds[l]; imag_offset += ds[l]
         end; end
         if reweight
-            objective += 0.5*Convex.nuclear_norm(state.Y_ext[k]*Q_ext)
+            objective += 0.5*Convex.nuclearnorm(state.Y_ext[k]*Q_ext)
         else
-            objective += 0.5*Convex.nuclear_norm(Q_ext)
+            objective += 0.5*Convex.nuclearnorm(Q_ext)
         end
         if l2_reg
-            objective += (1/aux_params["rho"])*Convex.sum_squares(Q_ext)
+            objective += (1/aux_params["rho"])*Convex.sumsquares(Q_ext)
         end
 
         # Effective channel and user constraint
@@ -193,7 +193,7 @@ function update_BSs!(state::GeneralizedRCRMState, channel::SinglecarrierChannel,
         S_r = G_r'*Vs_r + G_i'*Vs_i
         S_i = -G_i'*Vs_r + G_r'*Vs_i
         S_ext = hvcat(2, S_r, -S_i, S_i, S_r)
-        push!(constraints, Convex.lambda_min(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
+        push!(constraints, Convex.lambdamin(S_ext) >= aux_params["GeneralizedRCRM:epsilon"])
     end; end
 
     # Solve global approximated RCRM optimization problem

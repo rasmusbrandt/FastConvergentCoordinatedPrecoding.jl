@@ -1,7 +1,7 @@
 # FastConvergentCoordinatedPrecoding.jl
 
 **FastConvergentCoordinatedPrecoding.jl** is the simulation environment for
-> [R. Brandt][rabr5411] and [M. Bengtsson][matben], "[Fast-Convergent Distributed Coordinated Precoding for TDD Multicell MIMO Systems](http://kth.diva-portal.org/smash/get/diva2:861877/FULLTEXT01.pdf)", _IEEE Int. Workshop Computational Advances in Multi-Sensor Adaptive Process. (CAMSAP'15)_, 2015. To appear.
+> [R. Brandt][rabr5411] and [M. Bengtsson][matben], "[Fast-Convergent Distributed Coordinated Precoding for TDD Multicell MIMO Systems](http://kth.diva-portal.org/smash/get/diva2:861877/FULLTEXT01.pdf)", _IEEE Int. Workshop Computational Advances in Multi-Sensor Adaptive Process. (CAMSAP'15)_, 2015, pp. 457-460.
 
 It provides all the simulation code and scripts required to reproduce the figures from the paper.
 
@@ -34,11 +34,12 @@ This source code is licensed under the [GPLv2][gplv2] license. If you in any way
 use this code for research that results in publications, please cite our
 original article. The following [Bibtex][bibtex] entry can be used.
 ```
-@Article{Brandt2015baccepted,
+@InProceedings{Brandt2015,
   Title                    = {Fast-Convergent Distributed Coordinated Precoding for {TDD} Multicell {MIMO} Systems},
   Author                   = {Rasmus Brandt and Mats Bengtsson},
-  Journal                  = {Accepted to CAMSAP 2015},
-  Year                     = {2015}
+  Booktitle                = {Proc. IEEE Int. Workshop Computational Advances in Multi-Sensor Adaptive Process.},
+  Year                     = {2015},
+  Pages                    = {457--460}
 }
 ```
 
